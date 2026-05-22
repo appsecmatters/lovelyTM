@@ -104,9 +104,8 @@ There is a + button below the list to insert a BusinessScenario which opens a su
 Submodal asks for title, description, businessImpact (dropdown of Severity fields). When closed, a BusinessScenario is built.
 
 Section 2 shows the list of TechnicalScenario, displaying its title, an Edit button and a Trash button to update or delete this entry.
-There is a + button below the list to insert a TechnicalScenrio which opens a submodal.
+There is a + button below the list to insert a TechnicalScenario which opens a submodal.
 Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built.
-
 
 Closing the modal updates businessImpact and attackDifficulty of this letter for this Interaction.
 And then triggers a coloring results for this letter of this Interaction.
