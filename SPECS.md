@@ -1,4 +1,4 @@
-Version 0.13
+Version 0.14
 
 # High level description
 
@@ -89,6 +89,7 @@ First line:
 * a button "Import sequence diagram" that opens a modal where the user pastes the Markdown of a sequence diagram.
 When the modal is closed, the markdown is rendered in the main panel.
 If there is a syntax error, the modal cannot be closed.
+* a button "Import existing JSON" which open a previously exporting JSON. It loads the markdown from the `sequenceDiagram` field and instatiates the Interaction objects from the `interactions` field
 * a button "Export" which opens a modal asking for filename and then triggers the workflow described in the Persistence section
 
 Main panel: the rendered sequence diagram
@@ -120,7 +121,7 @@ Change the color of the letter depending on the BusinessRisk value computed:
 * High: red
 * Critical: purple
 
-Update the color of the corresponding arrow by using the color of the highest business risk letter.
+Update the color of the text above the corresponding arrow by using the color of the highest business risk letter.
 
 ## Stylesheet
 
