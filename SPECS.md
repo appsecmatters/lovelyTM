@@ -111,7 +111,7 @@ Something simple like the bootstrap CSS.
 # Persistence
 
 Build a JSON with the list of Interaction objects and a full copy of their members as described in the Data model section.
-Generate from this JSON a file called filename and have the browser download it.
+Generate from this JSON a file called {filename}.json and have the browser download it.
 
 # Testing
 
