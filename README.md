@@ -17,3 +17,8 @@ CounterMeasure: title as String, description as String, technicalScenarios as li
 * Importing an exported JSON file instead of using sequence diagram markdown as input
 
 * Diff between an exported JSON file and a new sequence diagram: ask to update only the modified Interactions
+
+## Build history
+
+* Initial Claude build with version 0.11 of specs: it took 15 minutes. UI description was missing section 2 Attack Scenarios
+* 

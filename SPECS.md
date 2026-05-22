@@ -1,3 +1,5 @@
+Version 0.12
+
 # High level description
 
 A webpage that takes in input a markdown sequence diagram, displays it and allows to annotate the arrows with security concerns.
@@ -38,6 +40,15 @@ Interaction: source as Actor, destination as Actor, businessImpact as BusinessIm
 
 # Business logic
 
+## STRIDE mappings
+
+s: Spoofing
+t: Tampering
+r: Repudiation
+i: Information Disclosure
+d: Denial of Service
+e: Elevation of Privilege
+
 ## Scoring methodology
 
 The risk score is computed by combining the buiness impact and the attack difficulty as in the BusinessRiskMatrix.
@@ -76,19 +87,25 @@ Only the algorithm for the s component is described below, for the other compone
 
 First line: 
 * a button "Import sequence diagram" that opens a modal where the user pastes the Markdown of a sequence diagram.
-When the modal is closed, the markdown is rendered in the main panel
+When the modal is closed, the markdown is rendered in the main panel.
+If there is a syntax error, the modal cannot be closed.
 * a button "Export" which opens a modal asking for filename and then triggers the workflow described in the Persistence section
 
 Main panel: the rendered sequence diagram
 
 Under each arrow of the sequence diagram, display the 6 letters S T R I D E separated by a whitespace.
-When clicking on any of those 6 letters, open a modal with the letter as title.
+When clicking on any of those 6 letters, open a modal.
 
+Its title is the STRIDE mapping corresponding to the letter.
 The modal has 2 sections one below the other: Business Impact Scenarios and Attack Scenarios.
 
-Section 1 shows the list of BusinessScenario, displaying only its title and a Trash button to delete this entry.
+Section 1 shows the list of BusinessScenario, displaying its title, an Edit button and a Trash button to update or delete this entry.
 There is a + button below the list to insert a BusinessScenario which opens a submodal.
 Submodal asks for title, description, businessImpact (dropdown of Severity fields). When closed, a BusinessScenario is built.
+
+Section 2 shows the list of TechnicalScenario, displaying its title, an Edit button and a Trash button to update or delete this entry.
+There is a + button below the list to insert a TechnicalScenrio which opens a submodal.
+Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built.
 
 
 Closing the modal updates businessImpact and attackDifficulty of this letter for this Interaction.
