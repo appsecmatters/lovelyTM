@@ -1,4 +1,4 @@
-Version 0.12
+Version 0.13
 
 # High level description
 
@@ -115,10 +115,12 @@ And then triggers a coloring results for this letter of this Interaction.
 Apply the risk scoring algorithm described in subsection Processing of Business logic.
 Change the color of the letter depending on the BusinessRisk value computed:
 * NA: black
-* Low: yellow
+* Low: light yellow
 * Medium: orange
 * High: red
 * Critical: purple
+
+Update the color of the corresponding arrow by using the color of the highest business risk letter.
 
 ## Stylesheet
 
@@ -126,7 +128,10 @@ Something simple like the bootstrap CSS.
 
 # Persistence
 
-Build a JSON with the list of Interaction objects and a full copy of their members as described in the Data model section.
+Build a JSON with:
+* the sequence diagram markdown as String in a sequenceDiagram field
+* the list of Interaction objects and a full copy of their members as described in the Data model section.
+
 Generate from this JSON a file called {filename}.json and have the browser download it.
 
 # Testing

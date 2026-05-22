@@ -21,4 +21,5 @@ CounterMeasure: title as String, description as String, technicalScenarios as li
 ## Build history
 
 * Initial Claude build with version 0.11 of specs: it took 15 minutes. UI description was missing section 2 Attack Scenarios
-* 
+* Version 0.12: it took 4 minutes. UI description now contains section 2 Attack Scenarios, validate markdown before closing import modal
+* Version 0.13: it took x minutes. Color arrows + export sequence digram in JSON.
