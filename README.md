@@ -28,4 +28,4 @@ CounterMeasure: title as String, description as String, technicalScenarios as li
 * Version 0.12: it took 4 minutes. UI description now contains section 2 Attack Scenarios, validate markdown before closing import modal
 * Version 0.13: it took 4.5 minutes. Color arrows + export sequence digram in JSON.
    Also 7 minutes because arrows were not arrows anymore after being coloured: still failed
-* Version 0.14: it took x minutes. Color text above rather than arrow + Import from already exported JSON
+* Version 0.14: it took 3 minutes. Color text above rather than arrow + Import from already exported JSON
