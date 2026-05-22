@@ -45,12 +45,14 @@ The attack difficulty is computed by combining the technical and logistics diffi
 
 BusinessRiskMatrix:
 | Business Impact / Attack Difficulty | Low | Low-Medium | Medium | Medium-High | High |
+| ----------------------------------- | --- | ---------- | ------ | ----------- | ---- |
 | Low | Low | Low | Low | Low | Low |
 | Medium | Medium | Medium | Medium | Low | Low |
 | High | Critical | Critical | High | Medium | Medium |
 
-Difficulty Matrix:
+DifficultyMatrix:
 | Technical / Logitiscs | Low | Low-Medium | Medium | Medium-High | High |
+| --------------------- | --- | ---------- | ------ | ----------- | ---- |
 | Low | Low | Low-Medium | Medium | Medium-High | High |
 | Low-Medium | Low-Medium | Low-Medium | Medium | Medium-High | High |
 | Medium | Medium | Medium | Medium-High | Medium-High | High |
@@ -73,3 +75,7 @@ TODO explain modal
 TODO explain results displayed
 
 Stylesheet: something basic like the bootstrap CSS
+
+# Testing
+
+Generate in `test_all_risk_scores.js` all the possible values of (technical difficulty, logistics difficulty, business impact) and compute the corresponding business riks according to BusinessRiskMatrix and DifficultyMatrix.
