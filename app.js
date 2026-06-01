@@ -1,39 +1,9 @@
 // ============================================================
-// LiteTM — Lightweight Threat Modeling Tool  (v0.12)
+// LiteTM — Lightweight Threat Modeling Tool  (v0.20)
+// Scoring logic lives in risk_scoring.js (SEVERITY, DIFFICULTY,
+// matrices, combineDifficulty, computeRiskForLetter, computeAllRisks,
+// RISK_ORDER) — all available as globals when loaded before this file.
 // ============================================================
-
-// ============================================================
-// Enums & Matrices
-// ============================================================
-
-const SEVERITY   = ['Low', 'Medium', 'High'];
-const DIFFICULTY = ['Low', 'Low-Medium', 'Medium', 'Medium-High', 'High'];
-
-/**
- * DIFFICULTY_MATRIX[techIdx][logsIdx] = combined difficulty
- * Rows: Technical Difficulty (Low → High)
- * Cols: Logistics Difficulty (Low → High)
- */
-const DIFFICULTY_MATRIX = [
-  // Log→  Low           Low-Medium     Medium         Medium-High    High
-  /* Low */        ['Low',        'Low-Medium',  'Medium',      'Medium-High', 'High'],
-  /* Low-Medium */ ['Low-Medium', 'Low-Medium',  'Medium',      'Medium-High', 'High'],
-  /* Medium */     ['Medium',     'Medium',      'Medium-High', 'Medium-High', 'High'],
-  /* Medium-High */['Medium-High','Medium-High', 'Medium-High', 'High',        'High'],
-  /* High */       ['High',       'High',        'High',        'High',        'High'],
-];
-
-/**
- * BUSINESS_RISK_MATRIX[impactIdx][diffIdx] = business risk
- * Rows: Business Impact (Low → High)
- * Cols: Attack Difficulty (Low → High)
- */
-const BUSINESS_RISK_MATRIX = [
-  // Diff→ Low       Low-Med    Medium     Med-High   High
-  /* Low */    ['Low',     'Low',     'Low',     'Low',     'Low'    ],
-  /* Medium */ ['Medium',  'Medium',  'Medium',  'Low',     'Low'    ],
-  /* High */   ['Critical','Critical','High',    'Medium',  'Medium' ],
-];
 
 const STRIDE_LETTERS = ['s', 't', 'r', 'i', 'd', 'e'];
 
@@ -50,13 +20,12 @@ const STRIDE_NAMES = {
 /** Hex colour per BusinessRisk level — used for STRIDE badges and message-text tinting. */
 const RISK_COLORS = {
   NA:       null,
+  None:     '#198754',
   Low:      '#ffc107',
   Medium:   '#fd7e14',
   High:     '#dc3545',
   Critical: '#6f42c1',
 };
-
-const RISK_ORDER = ['NA', 'Low', 'Medium', 'High', 'Critical'];
 
 // ============================================================
 // Application State
@@ -82,61 +51,6 @@ let modalCtx = {
 let bsStrideModal;
 let bsImportModal;
 let bsExportModal;
-
-// ============================================================
-// Scoring Logic
-// ============================================================
-
-function combineDifficulty(tech, logistics) {
-  const tIdx = DIFFICULTY.indexOf(tech);
-  const lIdx = DIFFICULTY.indexOf(logistics);
-  if (tIdx < 0 || lIdx < 0) return null;
-  return DIFFICULTY_MATRIX[tIdx][lIdx];
-}
-
-/**
- * Compute the BusinessRisk for one STRIDE letter of one interaction.
- * businessScenarios  – array of BusinessScenario for this letter
- * technicalScenarios – array of TechnicalScenario for this letter
- */
-function computeRiskForLetter(businessScenarios, technicalScenarios) {
-  if (!businessScenarios || businessScenarios.length === 0) return 'NA';
-
-  // Step 1: highest business impact severity
-  let maxImpactIdx = -1;
-  for (const s of businessScenarios) {
-    const idx = SEVERITY.indexOf(s.businessImpact);
-    if (idx > maxImpactIdx) maxImpactIdx = idx;
-  }
-  if (maxImpactIdx < 0) return 'NA';
-
-  if (!technicalScenarios || technicalScenarios.length === 0) return 'NA';
-
-  // Step 2: lowest combined attack difficulty
-  let minDiffIdx = DIFFICULTY.length; // start above max index
-  for (const t of technicalScenarios) {
-    const combined = combineDifficulty(t.technicalDifficulty, t.logisticsDifficulty);
-    if (combined !== null) {
-      const idx = DIFFICULTY.indexOf(combined);
-      if (idx < minDiffIdx) minDiffIdx = idx;
-    }
-  }
-  if (minDiffIdx >= DIFFICULTY.length) return 'NA';
-
-  // Step 3: look up risk matrix
-  return BUSINESS_RISK_MATRIX[maxImpactIdx][minDiffIdx];
-}
-
-function computeAllRisks(interaction) {
-  const risks = {};
-  for (const letter of STRIDE_LETTERS) {
-    risks[letter] = computeRiskForLetter(
-      interaction.businessImpact[letter],
-      interaction.attackDifficulty[letter]
-    );
-  }
-  return risks;
-}
 
 // ============================================================
 // Sequence Diagram Parser
@@ -213,6 +127,7 @@ function displaySvg(svg) {
 function riskClass(risk) {
   const map = {
     NA:       'stride-na',
+    None:     'stride-none',
     Low:      'stride-low',
     Medium:   'stride-medium',
     High:     'stride-high',

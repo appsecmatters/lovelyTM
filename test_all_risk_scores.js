@@ -1,60 +1,27 @@
 // test_all_risk_scores.js
-// Generates every possible combination of (technical difficulty, logistics difficulty,
-// business impact) and computes the resulting business risk using the DifficultyMatrix
-// and BusinessRiskMatrix defined in the specs.
+// Validates all possible (technical difficulty, logistics difficulty, business impact)
+// combinations against the DifficultyMatrix and BusinessRiskMatrix in risk_scoring.js.
 //
 // Run with:  node test_all_risk_scores.js
 
 'use strict';
 
-// ── Enums ──────────────────────────────────────────────────────────────────────
+const {
+  SEVERITY,
+  DIFFICULTY,
+  DIFFICULTY_MATRIX,
+  BUSINESS_RISK_MATRIX,
+  RISK_ORDER,
+  combineDifficulty,
+} = require('./risk_scoring');
 
-const SEVERITY   = ['Low', 'Medium', 'High'];
-const DIFFICULTY = ['Low', 'Low-Medium', 'Medium', 'Medium-High', 'High'];
-
-// ── Matrices ───────────────────────────────────────────────────────────────────
-
-/**
- * DIFFICULTY_MATRIX[techIdx][logsIdx] → combined difficulty
- *
- * Rows: Technical Difficulty (Low … High)
- * Cols: Logistics Difficulty (Low … High)
- */
-const DIFFICULTY_MATRIX = [
-  // Log→  Low           Low-Medium     Medium         Medium-High    High
-  /* Low */        ['Low',        'Low-Medium',  'Medium',      'Medium-High', 'High'],
-  /* Low-Medium */ ['Low-Medium', 'Low-Medium',  'Medium',      'Medium-High', 'High'],
-  /* Medium */     ['Medium',     'Medium',      'Medium-High', 'Medium-High', 'High'],
-  /* Medium-High */['Medium-High','Medium-High', 'Medium-High', 'High',        'High'],
-  /* High */       ['High',       'High',        'High',        'High',        'High'],
-];
-
-/**
- * BUSINESS_RISK_MATRIX[impactIdx][diffIdx] → business risk
- *
- * Rows: Business Impact  (Low … High)
- * Cols: Attack Difficulty (Low … High)
- */
-const BUSINESS_RISK_MATRIX = [
-  // Diff→  Low        Low-Med    Medium     Med-High   High
-  /* Low */    ['Low',     'Low',     'Low',     'Low',     'Low'    ],
-  /* Medium */ ['Medium',  'Medium',  'Medium',  'Low',     'Low'    ],
-  /* High */   ['Critical','Critical','High',    'Medium',  'Medium' ],
-];
-
-// ── Scoring functions ──────────────────────────────────────────────────────────
-
-function combineDifficulty(tech, logistics) {
-  const tIdx = DIFFICULTY.indexOf(tech);
-  const lIdx = DIFFICULTY.indexOf(logistics);
-  if (tIdx < 0 || lIdx < 0) throw new Error(`Unknown difficulty: tech=${tech}, logistics=${logistics}`);
-  return DIFFICULTY_MATRIX[tIdx][lIdx];
-}
+// ── Thin helper: raw values → business risk ────────────────────────────────────
 
 function computeBusinessRisk(businessImpact, techDiff, logsDiff) {
   const combined = combineDifficulty(techDiff, logsDiff);
-  const iIdx     = SEVERITY.indexOf(businessImpact);
-  const dIdx     = DIFFICULTY.indexOf(combined);
+  if (combined === null) throw new Error(`Unknown difficulty: tech=${techDiff}, logs=${logsDiff}`);
+  const iIdx = SEVERITY.indexOf(businessImpact);
+  const dIdx = DIFFICULTY.indexOf(combined);
   if (iIdx < 0) throw new Error(`Unknown businessImpact: ${businessImpact}`);
   return BUSINESS_RISK_MATRIX[iIdx][dIdx];
 }
@@ -83,7 +50,6 @@ const COLUMNS = [
   { key: 'risk',     label: 'Business Risk'        },
 ];
 
-// Compute column widths
 const widths = COLUMNS.map(col =>
   Math.max(col.label.length, ...results.map(r => r[col.key].length))
 );
@@ -99,14 +65,9 @@ console.log(padRow(COLUMNS.map(c => c.label)));
 console.log(separator);
 
 results.forEach((r, idx) => {
-  const prevTech = idx > 0 ? results[idx - 1].techDiff : null;
   const prevLogs = idx > 0 ? results[idx - 1].logsDiff : null;
-
-  // Visual separator between logistics groups
-  if (idx > 0 && r.logsDiff !== prevLogs) {
-    if (r.techDiff !== prevTech) console.log(separator);
-  }
-
+  const prevTech = idx > 0 ? results[idx - 1].techDiff : null;
+  if (idx > 0 && r.logsDiff !== prevLogs && r.techDiff !== prevTech) console.log(separator);
   console.log(padRow(COLUMNS.map(c => r[c.key])));
 });
 
@@ -114,30 +75,19 @@ console.log(separator);
 console.log(`\nTotal combinations: ${results.length}`);
 console.log(`  ${DIFFICULTY.length} tech × ${DIFFICULTY.length} logistics × ${SEVERITY.length} impact = ${DIFFICULTY.length ** 2 * SEVERITY.length}`);
 
-// ── Spot-check assertions ──────────────────────────────────────────────────────
+// ── Assertions ─────────────────────────────────────────────────────────────────
 
 let failures = 0;
 
-function assert(techDiff, logsDiff, impact, expectedRisk) {
+function assert(techDiff, logsDiff, impact, expectedRisk, note) {
   const actual = computeBusinessRisk(impact, techDiff, logsDiff);
   if (actual !== expectedRisk) {
-    console.error(`FAIL  tech=${techDiff}, logs=${logsDiff}, impact=${impact} → expected ${expectedRisk}, got ${actual}`);
+    const label = note ? ` (${note})` : '';
+    console.error(`FAIL  tech=${techDiff}, logs=${logsDiff}, impact=${impact} → expected ${expectedRisk}, got ${actual}${label}`);
     failures++;
   }
 }
 
-// Boundary cases from the spec matrices
-assert('Low',  'Low',  'Low',    'Low');
-assert('Low',  'Low',  'Medium', 'Medium');
-assert('Low',  'Low',  'High',   'Critical');
-assert('High', 'High', 'Low',    'Low');
-assert('High', 'High', 'Medium', 'Low');
-assert('High', 'High', 'High',   'Medium');
-assert('Low',   'High',   'High', 'Medium');  // combined=High     → BusinessRisk[High][High] = Medium
-assert('Medium','Medium', 'High', 'Medium');  // combined=Medium-High → BusinessRisk[High][Medium-High] = Medium
-assert('Low',  'Low',  'High',   'Critical'); // combined=Low → Critical
-
-// Verify DifficultyMatrix spot checks
 function assertDiff(tech, logs, expected) {
   const actual = combineDifficulty(tech, logs);
   if (actual !== expected) {
@@ -145,6 +95,60 @@ function assertDiff(tech, logs, expected) {
     failures++;
   }
 }
+
+// ── Property checks (enforced over all difficulty combinations) ────────────────
+
+// Spec: "None business impact always returns None"
+for (const techDiff of DIFFICULTY) {
+  for (const logsDiff of DIFFICULTY) {
+    assert(techDiff, logsDiff, 'None', 'None', 'None impact → always None');
+  }
+}
+
+// Spec: "Low business impact returns Low"
+for (const techDiff of DIFFICULTY) {
+  for (const logsDiff of DIFFICULTY) {
+    assert(techDiff, logsDiff, 'Low', 'Low', 'Low impact → always Low');
+  }
+}
+
+// Spec: "Medium business impact never returns more than Medium"
+const mediumIdx = RISK_ORDER.indexOf('Medium');
+for (const techDiff of DIFFICULTY) {
+  for (const logsDiff of DIFFICULTY) {
+    const risk = computeBusinessRisk('Medium', techDiff, logsDiff);
+    if (RISK_ORDER.indexOf(risk) > mediumIdx) {
+      console.error(`FAIL  tech=${techDiff}, logs=${logsDiff}, impact=Medium → ${risk} exceeds Medium`);
+      failures++;
+    }
+  }
+}
+
+// Spec: "High business impact returns at least Medium"
+for (const techDiff of DIFFICULTY) {
+  for (const logsDiff of DIFFICULTY) {
+    const risk = computeBusinessRisk('High', techDiff, logsDiff);
+    if (RISK_ORDER.indexOf(risk) < mediumIdx) {
+      console.error(`FAIL  tech=${techDiff}, logs=${logsDiff}, impact=High → ${risk} is below Medium`);
+      failures++;
+    }
+  }
+}
+
+// ── Spot checks: BusinessRiskMatrix corners ────────────────────────────────────
+
+assert('Low',  'Low',  'None',   'None');
+assert('Low',  'Low',  'Low',    'Low');
+assert('Low',  'Low',  'Medium', 'Medium');
+assert('Low',  'Low',  'High',   'Critical');
+assert('High', 'High', 'None',   'None');
+assert('High', 'High', 'Low',    'Low');
+assert('High', 'High', 'Medium', 'Low');
+assert('High', 'High', 'High',   'Medium');
+assert('Low',  'High', 'High',   'Medium');      // combined=High → Critical/High/Medium row → Medium
+assert('Medium','Medium','High', 'Medium');      // combined=Medium-High → Medium
+
+// ── Spot checks: DifficultyMatrix ─────────────────────────────────────────────
 
 assertDiff('Low',         'Low',         'Low');
 assertDiff('Low',         'Medium',      'Medium');
@@ -155,8 +159,10 @@ assertDiff('Low-Medium',  'Low',         'Low-Medium');
 assertDiff('Low-Medium',  'Low-Medium',  'Low-Medium');
 assertDiff('Medium',      'Low-Medium',  'Medium');
 
+// ── Result ─────────────────────────────────────────────────────────────────────
+
 if (failures === 0) {
-  console.log('\nAll spot-check assertions passed ✓');
+  console.log('\nAll assertions passed ✓');
 } else {
   console.error(`\n${failures} assertion(s) FAILED`);
   process.exitCode = 1;

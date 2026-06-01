@@ -1,4 +1,4 @@
-Version 0.14
+Version 0.20
 
 # High level description
 
@@ -20,11 +20,11 @@ Minimal dependencies.
 
 Actor: name as String, parsed from the input sequence diagram
 
-Severity: Enum (ordered) with values Low, Medium, High
+Severity: Enum (ordered) with values None, Low, Medium, High
 
 Difficulty: Enum (ordered) with values Low, Low-Medium, Medium, Medium-High, High
 
-BusinessRisk: Enum (ordered) with values NA, Low, Medium, High, Critical
+BusinessRisk: Enum (ordered) with values NA, None, Low, Medium, High, Critical
 
 BusinessScenario: title as String, description as String, businessImpact as Severity
 
@@ -53,10 +53,12 @@ e: Elevation of Privilege
 
 The risk score is computed by combining the buiness impact and the attack difficulty as in the BusinessRiskMatrix.
 The attack difficulty is computed by combining the technical and logistics difficulties as in the DifficultyMatrix.
+This logic is isolated in `risk_scoring.js`.
 
 BusinessRiskMatrix:
 | Business Impact / Attack Difficulty | Low | Low-Medium | Medium | Medium-High | High |
 | ----------------------------------- | --- | ---------- | ------ | ----------- | ---- |
+| None | None | None | None | None | None |
 | Low | Low | Low | Low | Low | Low |
 | Medium | Medium | Medium | Medium | Low | Low |
 | High | Critical | Critical | High | Medium | Medium |
@@ -116,6 +118,7 @@ And then triggers a coloring results for this letter of this Interaction.
 Apply the risk scoring algorithm described in subsection Processing of Business logic.
 Change the color of the letter depending on the BusinessRisk value computed:
 * NA: black
+* None: Green
 * Low: light yellow
 * Medium: orange
 * High: red
@@ -137,4 +140,9 @@ Generate from this JSON a file called {filename}.json and have the browser downl
 
 # Testing
 
-Generate in `test_all_risk_scores.js` all the possible values of (technical difficulty, logistics difficulty, business impact) and compute the corresponding business riks according to BusinessRiskMatrix and DifficultyMatrix.
+Generate in `test_all_risk_scores.js` an explicit list of all the possible values of (technical difficulty, logistics difficulty, business impact) and compute the corresponding business riks according to BusinessRiskMatrix and DifficultyMatrix.
+Make sure:
+* None business impact always returns None
+* Low business impact returns Low
+* Medium business impact never returns more than Medium
+* High business impact returns at least Medium
