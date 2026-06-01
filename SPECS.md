@@ -1,4 +1,4 @@
-Version 0.26
+Version 0.27
 
 # High level description
 
@@ -97,6 +97,7 @@ If there is a syntax error, the modal cannot be closed.
 * a button "Risk scoring" which opens a modal with a HTML view of the 2 tables BusinessRiskMatrix and DifficultyMatrix
 
 Main panel: the rendered sequence diagram
+Just above it: a label "Coverage score" with its value corresponding to the percentage (with 1 decimal) of ResultingBusinessRisks that are different from NA.
 
 Under each arrow of the sequence diagram, display the 6 letters S T R I D E separated by a whitespace.
 When clicking on any of those 6 letters, open a modal.
@@ -119,7 +120,7 @@ Submodal asks for title, description, technicalDifficulty (dropdown of Difficult
 Section 3 is a label called Resulting Risk followed by the computed BusinessRisk with the color corresponding to coloring results.
 
 Closing the modal updates businessImpact and attackDifficulty of this letter for this Interaction.
-And then triggers a coloring results for this letter of this Interaction.
+And then triggers a coloring results for this letter of this Interaction, followed by updating the coverage score.
 If businessImpact is not NA but businessRisk is NA, add a question mark below this letter.
 
 ## Coloring results

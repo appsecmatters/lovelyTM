@@ -306,6 +306,26 @@ function colorAllMessageTexts() {
 }
 
 // ============================================================
+// Coverage Score
+// ============================================================
+
+function updateCoverageScore() {
+  const total = interactions.length * STRIDE_LETTERS.length;
+  const el    = document.getElementById('coverageScore');
+  if (total === 0) { el.style.display = 'none'; return; }
+
+  let scored = 0;
+  for (const interaction of interactions) {
+    for (const letter of STRIDE_LETTERS) {
+      if (interaction.risks[letter] !== 'NA') scored++;
+    }
+  }
+  document.getElementById('coverageScoreValue').textContent =
+    (scored / total * 100).toFixed(1) + '%';
+  el.style.display = '';
+}
+
+// ============================================================
 // STRIDE Modal
 // ============================================================
 
@@ -321,6 +341,7 @@ function closeStrideModal() {
   interaction.risks = computeAllRisks(interaction);
   refreshAnnotationColors(modalCtx.interactionIndex);
   updateMessageTextColor(modalCtx.interactionIndex);
+  updateCoverageScore();
   bsStrideModal.hide();
 }
 
@@ -773,6 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       injectStrideOverlays();
       colorAllMessageTexts();
+      updateCoverageScore();
 
     } catch (err) {
       // Render failed — keep modal open and show the error.
@@ -829,6 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       injectStrideOverlays();
       colorAllMessageTexts();
+      updateCoverageScore();
 
     } catch (err) {
       document.getElementById(`d${renderId}`)?.remove();

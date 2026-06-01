@@ -29,4 +29,5 @@ CounterMeasure: title as String, description as String, technicalScenarios as li
 * Version 0.23: it took 3 minutes. Include crash course
 * Version 0.24: it took 6 minutes. Cleaner crash course and online help.
 * Version 0.25: it took 3 minutes. Online help for business impact and attack scenarios + risk scoring tables
-* Version 0.26: it took 1 minute1. More acurate submodal titles
+* Version 0.26: it took 1 minute. More acurate submodal titles
+* Version 0.27: it took 2 minutes. Completion score
