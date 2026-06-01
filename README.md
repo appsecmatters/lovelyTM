@@ -5,6 +5,8 @@ TODO explain STRIDE business first + opinionated
 
 TODO explain input: https://mermaid.js.org/syntax/sequenceDiagram.html
 
+TODO explain how to play with security requirements priorities
+
 ## Not implemented yet
 
 * Online help in the Business Scenario and Technical Scenario modals
@@ -26,3 +28,5 @@ CounterMeasure: title as String, description as String, technicalScenarios as li
 * Version 0.20: it took 4 minutes. None business impact, refactoring risk scoring logic/testing 
 * Version 0.21 : it took 1 minute. Display risk score live
 * Version 0.22 : it took 5 minutes. Risk computation even if no TechnicalScenario via NA value, question mark displayed when more info needed
+* Version 0.23: it took 3 minutes. Include crash course
+* Version 0.24: it took 6 minutes. Cleaner crash course and online help.

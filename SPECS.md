@@ -1,4 +1,4 @@
-Version 0.22
+Version 0.24
 
 # High level description
 
@@ -93,13 +93,14 @@ When the modal is closed, the markdown is rendered in the main panel.
 If there is a syntax error, the modal cannot be closed.
 * a button "Import existing JSON" which open a previously exporting JSON. It loads the markdown from the `sequenceDiagram` field and instatiates the Interaction objects from the `interactions` field
 * a button "Export" which opens a modal asking for filename and then triggers the workflow described in the Persistence section
+* a button "Crash Course" which opens a modal with a HTML view of `crash_course.md`. HTML new lines should match the empty lines of md file. Include online help.
 
 Main panel: the rendered sequence diagram
 
 Under each arrow of the sequence diagram, display the 6 letters S T R I D E separated by a whitespace.
 When clicking on any of those 6 letters, open a modal.
 
-Its title is the STRIDE mapping corresponding to the letter.
+Its title is the STRIDE mapping corresponding to the letter, followed by the online help.
 The modal has 3 sections one below the other: Business Impact Scenarios, Attack Scenarios, Resulting Risk.
 
 Section 1 shows the list of BusinessScenario, displaying its title, an Edit button and a Trash button to update or delete this entry.
@@ -132,6 +133,11 @@ Update the color of the text above the corresponding arrow by using the color of
 ## Stylesheet
 
 Something simple like the bootstrap CSS.
+
+## Online help
+
+Next to the word Spoofing, Tampering, Repudation, Information Disclosure, Denial of Serivce, Elevation of Privilege:
+display a small help icon and when mouse is over it, show the corresponding definition loaded from `STRIDE_definitions.md`
 
 # Persistence
 

@@ -17,6 +17,45 @@ const STRIDE_NAMES = {
   e: 'Elevation of Privilege',
 };
 
+/** STRIDE letter → definition from STRIDE_definitions.md (Microsoft) */
+const STRIDE_DEFINITIONS = {
+  s: 'Involves illegally accessing and then using another user\'s authentication information, such as username and password',
+  t: 'Involves the malicious modification of data. Examples include unauthorized changes made to persistent data, such as that held in a database, and the alteration of data as it flows between two computers over an open network, such as the Internet',
+  r: 'Associated with users who deny performing an action without other parties having any way to prove otherwise—for example, a user performs an illegal operation in a system that lacks the ability to trace the prohibited operations. Non-Repudiation refers to the ability of a system to counter repudiation threats.',
+  i: 'Involves the exposure of information to individuals who are not supposed to have access to it—for example, the ability of users to read a file that they were not granted access to, or the ability of an intruder to read data in transit between two computers',
+  d: 'Denial of service (DoS) attacks deny service to valid users—for example, by making a Web server temporarily unavailable or unusable. You must protect against certain types of DoS threats simply to improve system availability and reliability',
+  e: 'An unprivileged user gains privileged access and thereby has sufficient access to compromise or destroy the entire system. Elevation of privilege threats include those situations in which an attacker has effectively penetrated all system defenses and become part of the trusted system itself, a dangerous situation indeed',
+};
+
+/** Returns an HTML help-icon span with a Bootstrap tooltip containing the definition. */
+function helpIconHtml(letter) {
+  return `<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="auto" data-bs-title="${escapeHtml(STRIDE_DEFINITIONS[letter])}">ⓘ</span>`;
+}
+
+/**
+ * Single-pass regex: matches either an HTML tag (returned unchanged) or a STRIDE
+ * category name (appended with a help icon). Skipping tags prevents matching text
+ * inside attribute values such as data-bs-title.
+ */
+const STRIDE_MENTION_RE = /<[^>]*>|Spoofing|Tampering|Repudiation|Information [Dd]isclosure|Denial of [Ss]ervice|E(?:levation|scalation) of [Pp]rivilege/g;
+
+function letterForMention(name) {
+  const l = name.toLowerCase();
+  if (l === 'spoofing')            return 's';
+  if (l === 'tampering')           return 't';
+  if (l === 'repudiation')         return 'r';
+  if (l.startsWith('information')) return 'i';
+  if (l.startsWith('denial'))      return 'd';
+  return 'e';
+}
+
+/** Initialises Bootstrap tooltips on all [data-bs-toggle="tooltip"] inside container. */
+function initTooltips(container) {
+  container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+    bootstrap.Tooltip.getOrCreateInstance(el, { customClass: 'help-tooltip' });
+  });
+}
+
 /** Hex colour per BusinessRisk level — used for STRIDE badges and message-text tinting. */
 const RISK_COLORS = {
   NA:       null,
@@ -51,6 +90,7 @@ let modalCtx = {
 let bsStrideModal;
 let bsImportModal;
 let bsExportModal;
+let bsCrashCourseModal;
 
 // ============================================================
 // Sequence Diagram Parser
@@ -285,8 +325,7 @@ function renderStrideModalContent() {
 
   // ── Main list page ─────────────────────────────────────────
   if (page === 'main') {
-    // Title = full STRIDE category name (spec §UI)
-    titleEl.textContent = STRIDE_NAMES[letter];
+    titleEl.innerHTML = `${escapeHtml(STRIDE_NAMES[letter])} ${helpIconHtml(letter)}`;
 
     const biz  = interaction.businessImpact[letter];
     const tech = interaction.attackDifficulty[letter];
@@ -356,6 +395,7 @@ function renderStrideModalContent() {
       <button type="button" class="btn btn-primary" id="strideCloseBtn">Close</button>
     `;
     document.getElementById('strideCloseBtn').addEventListener('click', closeStrideModal);
+    initTooltips(document.getElementById('strideModal'));
 
   // ── BusinessScenario form (create or edit) ─────────────────
   } else if (page === 'newBusiness') {
@@ -564,6 +604,40 @@ function escapeHtml(str) {
 }
 
 // ============================================================
+// Crash Course Content  (source: crash_course.md)
+// ============================================================
+
+const CRASH_COURSE_MD = `### Goal: Identify security risks in the interactions between the components and prioritize what requires fixing
+
+* Have a rather exhaustive methodology to list risks: STRIDE from Microsoft
+* Compute a score for those risks
+* Find security requirements (either a technical solution, a process or a doc) to reduce the severity of the most significant risks
+
+### Customized STRIDE methodology
+
+* 6 families of threats
+  * Spoofing
+  * Tampering
+  * Repudiation
+  * Information disclosure
+  * Denial of service
+  * Escalation of privilege
+
+* Draw a high level diagram of the various components
+
+* For every interaction between 2 components
+  * Suppose a threat can be exploited (i.e. an attack exists)
+  * Estimate the business impact of such attack (Low, Medium, High)
+  * Estimate the complexity to execute such attack both from a technical and logistics point of view
+  * Risk score computed according to tables in \`SPECS.md\`
+
+### What's next
+
+* Build a list of security requirements prioritized by risk reduction vs implementation effort
+* Restart the threat modeling loop to update risks when new components or features or added
+`;
+
+// ============================================================
 // Initialisation
 // ============================================================
 
@@ -574,8 +648,9 @@ document.addEventListener('DOMContentLoaded', () => {
     backdrop: 'static',
     keyboard: false,
   });
-  bsImportModal = new bootstrap.Modal(document.getElementById('importModal'));
-  bsExportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+  bsImportModal       = new bootstrap.Modal(document.getElementById('importModal'));
+  bsExportModal       = new bootstrap.Modal(document.getElementById('exportModal'));
+  bsCrashCourseModal  = new bootstrap.Modal(document.getElementById('crashCourseModal'));
 
   // ── Import ─────────────────────────────────────────────────
   document.getElementById('importBtn').addEventListener('click', () => {
@@ -693,6 +768,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const filename = document.getElementById('exportFilename').value.trim() || 'threat-model';
     exportData(filename);
     bsExportModal.hide();
+  });
+
+  // ── Crash Course ───────────────────────────────────────────
+  document.getElementById('crashCourseBtn').addEventListener('click', () => {
+    let html = marked.parse(CRASH_COURSE_MD)
+      .replace(/<table>/g, '<table class="table table-sm table-bordered">');
+
+    // Single-pass: add help icons next to STRIDE names; HTML tags are skipped
+    // so attribute values (e.g. data-bs-title) are never mutated.
+    html = html.replace(STRIDE_MENTION_RE, m =>
+      m.startsWith('<') ? m : `${m} ${helpIconHtml(letterForMention(m))}`
+    );
+
+    const body = document.getElementById('crashCourseBody');
+    body.innerHTML = html;
+    initTooltips(body);
+    bsCrashCourseModal.show();
   });
 
   // ── STRIDE modal X button ───────────────────────────────────
