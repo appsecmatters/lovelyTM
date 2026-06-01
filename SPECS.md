@@ -1,4 +1,4 @@
-Version 0.24
+Version 0.26
 
 # High level description
 
@@ -93,7 +93,8 @@ When the modal is closed, the markdown is rendered in the main panel.
 If there is a syntax error, the modal cannot be closed.
 * a button "Import existing JSON" which open a previously exporting JSON. It loads the markdown from the `sequenceDiagram` field and instatiates the Interaction objects from the `interactions` field
 * a button "Export" which opens a modal asking for filename and then triggers the workflow described in the Persistence section
-* a button "Crash Course" which opens a modal with a HTML view of `crash_course.md`. HTML new lines should match the empty lines of md file. Include online help.
+* a button "Crash Course" which opens a modal with a HTML view of `crash_course.md`. HTML new lines should match the empty lines of md file. Include online help
+* a button "Risk scoring" which opens a modal with a HTML view of the 2 tables BusinessRiskMatrix and DifficultyMatrix
 
 Main panel: the rendered sequence diagram
 
@@ -104,11 +105,15 @@ Its title is the STRIDE mapping corresponding to the letter, followed by the onl
 The modal has 3 sections one below the other: Business Impact Scenarios, Attack Scenarios, Resulting Risk.
 
 Section 1 shows the list of BusinessScenario, displaying its title, an Edit button and a Trash button to update or delete this entry.
-There is a + button below the list to insert a BusinessScenario which opens a submodal.
+There is a + button (with message Add Business Impact Scenario) below the list to insert a BusinessScenario which opens a submodal.
+Next to this button, display a small help icon and when mouse is over it, show the corresponding message "Supposing such attack is possible, what would be the business impact?"
+Same icon and content is displayed next to the submodal window title. Submodal window title is "Business Impact scenario for " + STRIDE mapping.
 Submodal asks for title, description, businessImpact (dropdown of Severity fields). When closed, a BusinessScenario is built.
 
 Section 2 shows the list of TechnicalScenario, displaying its title, an Edit button and a Trash button to update or delete this entry.
 There is a + button below the list to insert a TechnicalScenario which opens a submodal.
+Next to this button, display a small help icon and when mouse is over it, show the corresponding message "Estimate the complexity to execute such attack"
+Same icon and content is displayed next to the submodal window title. Submodal window title is "Attack scenario for " + STRIDE mapping.
 Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built.
 
 Section 3 is a label called Resulting Risk followed by the computed BusinessRisk with the color corresponding to coloring results.

@@ -9,8 +9,6 @@ TODO explain how to play with security requirements priorities
 
 ## Not implemented yet
 
-* Online help in the Business Scenario and Technical Scenario modals
-
 * Counter measures (to be replaced by Security Requirements)
 CounterMeasure: title as String, description as String, technicalScenarios as list of technicalScenario, technicalDifficulty as Difficulty, logisticsDifficulty as Difficulty
 
@@ -30,3 +28,5 @@ CounterMeasure: title as String, description as String, technicalScenarios as li
 * Version 0.22 : it took 5 minutes. Risk computation even if no TechnicalScenario via NA value, question mark displayed when more info needed
 * Version 0.23: it took 3 minutes. Include crash course
 * Version 0.24: it took 6 minutes. Cleaner crash course and online help.
+* Version 0.25: it took 3 minutes. Online help for business impact and attack scenarios + risk scoring tables
+* Version 0.26: it took 1 minute1. More acurate submodal titles

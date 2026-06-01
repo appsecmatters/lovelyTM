@@ -27,10 +27,18 @@ const STRIDE_DEFINITIONS = {
   e: 'An unprivileged user gains privileged access and thereby has sufficient access to compromise or destroy the entire system. Elevation of privilege threats include those situations in which an attacker has effectively penetrated all system defenses and become part of the trusted system itself, a dangerous situation indeed',
 };
 
-/** Returns an HTML help-icon span with a Bootstrap tooltip containing the definition. */
-function helpIconHtml(letter) {
-  return `<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="auto" data-bs-title="${escapeHtml(STRIDE_DEFINITIONS[letter])}">ⓘ</span>`;
+/** Returns a generic ⓘ icon with a Bootstrap tooltip showing any message. */
+function infoIconHtml(message) {
+  return `<span class="help-icon" data-bs-toggle="tooltip" data-bs-placement="auto" data-bs-title="${escapeHtml(message)}">ⓘ</span>`;
 }
+
+/** Returns an ⓘ icon with the STRIDE definition for a given letter. */
+function helpIconHtml(letter) {
+  return infoIconHtml(STRIDE_DEFINITIONS[letter]);
+}
+
+const HELP_BUSINESS_IMPACT   = 'Supposing such attack is possible, what would be the business impact?';
+const HELP_ATTACK_DIFFICULTY = 'Estimate the complexity to execute such attack';
 
 /**
  * Single-pass regex: matches either an HTML tag (returned unchanged) or a STRIDE
@@ -91,6 +99,7 @@ let bsStrideModal;
 let bsImportModal;
 let bsExportModal;
 let bsCrashCourseModal;
+let bsRiskScoringModal;
 
 // ============================================================
 // Sequence Diagram Parser
@@ -351,8 +360,11 @@ function renderStrideModalContent() {
             </div>`).join('')
         }
       </div>
-      <button class="btn btn-sm btn-outline-success mt-2 mb-4"
-              onclick="app.showNewBusinessForm()">+ Add Business Scenario</button>
+      <div class="d-flex align-items-center gap-2 mt-2 mb-4">
+        <button class="btn btn-sm btn-outline-success"
+                onclick="app.showNewBusinessForm()">+ Add Business Impact Scenario</button>
+        ${infoIconHtml(HELP_BUSINESS_IMPACT)}
+      </div>
 
       <hr class="my-2">
 
@@ -377,8 +389,11 @@ function renderStrideModalContent() {
             </div>`).join('')
         }
       </div>
-      <button class="btn btn-sm btn-outline-success mt-2"
-              onclick="app.showNewTechForm()">+ Add Attack Scenario</button>
+      <div class="d-flex align-items-center gap-2 mt-2">
+        <button class="btn btn-sm btn-outline-success"
+                onclick="app.showNewTechForm()">+ Add Attack Scenario</button>
+        ${infoIconHtml(HELP_ATTACK_DIFFICULTY)}
+      </div>
 
       <hr class="my-2">
 
@@ -402,7 +417,7 @@ function renderStrideModalContent() {
     const isEdit   = editIndex >= 0;
     const existing = isEdit ? interaction.businessImpact[letter][editIndex] : null;
 
-    titleEl.textContent = isEdit ? 'Edit Business Impact Scenario' : 'Add Business Impact Scenario';
+    titleEl.innerHTML = `Business Impact scenario for ${escapeHtml(STRIDE_NAMES[letter])} ${infoIconHtml(HELP_BUSINESS_IMPACT)}`;
 
     bodyEl.innerHTML = `
       <div class="mb-3">
@@ -435,13 +450,14 @@ function renderStrideModalContent() {
       renderStrideModalContent();
     });
     document.getElementById('bizSaveBtn').addEventListener('click', saveBusinessScenario);
+    initTooltips(document.getElementById('strideModal'));
 
   // ── TechnicalScenario form (create or edit) ────────────────
   } else if (page === 'newTech') {
     const isEdit   = editIndex >= 0;
     const existing = isEdit ? interaction.attackDifficulty[letter][editIndex] : null;
 
-    titleEl.textContent = isEdit ? 'Edit Attack Scenario' : 'Add Attack Scenario';
+    titleEl.innerHTML = `Attack scenario for ${escapeHtml(STRIDE_NAMES[letter])} ${infoIconHtml(HELP_ATTACK_DIFFICULTY)}`;
 
     bodyEl.innerHTML = `
       <div class="mb-3">
@@ -482,6 +498,7 @@ function renderStrideModalContent() {
       renderStrideModalContent();
     });
     document.getElementById('techSaveBtn').addEventListener('click', saveTechnicalScenario);
+    initTooltips(document.getElementById('strideModal'));
   }
 }
 
@@ -604,6 +621,66 @@ function escapeHtml(str) {
 }
 
 // ============================================================
+// Risk Scoring Tables
+// ============================================================
+
+const RISK_CELL_BG = {
+  NA:       '',
+  None:     '#d1e7dd',
+  Low:      '#fff3cd',
+  Medium:   '#ffe5d0',
+  High:     '#f8d7da',
+  Critical: '#e2d9f3',
+};
+
+function buildRiskScoringHtml() {
+  // ── BusinessRiskMatrix ────────────────────────────────────
+  const bizHeaderCells = ['<th>Business Impact / Attack Difficulty</th>',
+    ...ATTACK_DIFFICULTY.map(d => `<th class="text-center">${d}</th>`)].join('');
+
+  const bizBodyRows = SEVERITY.map((impact, iIdx) =>
+    '<tr><th>' + impact + '</th>' +
+    ATTACK_DIFFICULTY.map((_, dIdx) => {
+      const risk = BUSINESS_RISK_MATRIX[iIdx][dIdx];
+      const bg   = RISK_CELL_BG[risk] ? ` style="background:${RISK_CELL_BG[risk]}"` : '';
+      return `<td class="text-center fw-medium"${bg}>${risk}</td>`;
+    }).join('') +
+    '</tr>'
+  ).join('');
+
+  // ── DifficultyMatrix ──────────────────────────────────────
+  const diffHeaderCells = ['<th>Technical / Logistics</th>',
+    ...DIFFICULTY.map(d => `<th class="text-center">${d}</th>`)].join('');
+
+  const diffBodyRows = DIFFICULTY.map((tech, tIdx) =>
+    '<tr><th>' + tech + '</th>' +
+    DIFFICULTY.map((_, lIdx) =>
+      `<td class="text-center">${DIFFICULTY_MATRIX[tIdx][lIdx]}</td>`
+    ).join('') +
+    '</tr>'
+  ).join('');
+
+  return `
+    <h6 class="fw-semibold mb-2">Business Risk Matrix</h6>
+    <p class="text-muted small mb-1">Rows: business impact of the threat. Columns: combined attack difficulty.</p>
+    <div class="table-responsive mb-4">
+      <table class="table table-sm table-bordered mb-0">
+        <thead class="table-light"><tr>${bizHeaderCells}</tr></thead>
+        <tbody>${bizBodyRows}</tbody>
+      </table>
+    </div>
+    <h6 class="fw-semibold mb-2">Difficulty Matrix</h6>
+    <p class="text-muted small mb-1">Combines technical and logistics difficulty into a single attack difficulty.</p>
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0">
+        <thead class="table-light"><tr>${diffHeaderCells}</tr></thead>
+        <tbody>${diffBodyRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ============================================================
 // Crash Course Content  (source: crash_course.md)
 // ============================================================
 
@@ -629,7 +706,7 @@ const CRASH_COURSE_MD = `### Goal: Identify security risks in the interactions b
   * Suppose a threat can be exploited (i.e. an attack exists)
   * Estimate the business impact of such attack (Low, Medium, High)
   * Estimate the complexity to execute such attack both from a technical and logistics point of view
-  * Risk score computed according to tables in \`SPECS.md\`
+  * Risk score computed according to tables in Risk Scoring
 
 ### What's next
 
@@ -651,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bsImportModal       = new bootstrap.Modal(document.getElementById('importModal'));
   bsExportModal       = new bootstrap.Modal(document.getElementById('exportModal'));
   bsCrashCourseModal  = new bootstrap.Modal(document.getElementById('crashCourseModal'));
+  bsRiskScoringModal  = new bootstrap.Modal(document.getElementById('riskScoringModal'));
 
   // ── Import ─────────────────────────────────────────────────
   document.getElementById('importBtn').addEventListener('click', () => {
@@ -768,6 +846,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const filename = document.getElementById('exportFilename').value.trim() || 'threat-model';
     exportData(filename);
     bsExportModal.hide();
+  });
+
+  // ── Risk Scoring ───────────────────────────────────────────
+  document.getElementById('riskScoringBtn').addEventListener('click', () => {
+    document.getElementById('riskScoringBody').innerHTML = buildRiskScoringHtml();
+    bsRiskScoringModal.show();
   });
 
   // ── Crash Course ───────────────────────────────────────────

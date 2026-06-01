@@ -20,7 +20,7 @@
   * Suppose a threat can be exploited (i.e. an attack exists)
   * Estimate the business impact of such attack (Low, Medium, High)
   * Estimate the complexity to execute such attack both from a technical and logistics point of view
-  * Risk score computed according to tables in `SPECS.md`
+  * Risk score computed according to tables in Risk Scoring
 
 ### What's next
 
