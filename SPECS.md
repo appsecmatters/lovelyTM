@@ -1,4 +1,4 @@
-Version 0.20
+Version 0.22
 
 # High level description
 
@@ -22,7 +22,7 @@ Actor: name as String, parsed from the input sequence diagram
 
 Severity: Enum (ordered) with values None, Low, Medium, High
 
-Difficulty: Enum (ordered) with values Low, Low-Medium, Medium, Medium-High, High
+Difficulty: Enum (ordered) with values NA, Low, Low-Medium, Medium, Medium-High, High
 
 BusinessRisk: Enum (ordered) with values NA, None, Low, Medium, High, Critical
 
@@ -56,12 +56,12 @@ The attack difficulty is computed by combining the technical and logistics diffi
 This logic is isolated in `risk_scoring.js`.
 
 BusinessRiskMatrix:
-| Business Impact / Attack Difficulty | Low | Low-Medium | Medium | Medium-High | High |
-| ----------------------------------- | --- | ---------- | ------ | ----------- | ---- |
-| None | None | None | None | None | None |
-| Low | Low | Low | Low | Low | Low |
-| Medium | Medium | Medium | Medium | Low | Low |
-| High | Critical | Critical | High | Medium | Medium |
+| Business Impact / Attack Difficulty | NA | Low | Low-Medium | Medium | Medium-High | High |
+| ----------------------------------- | -- | --- | ---------- | ------ | ----------- | ---- |
+| None | None | None | None | None | None | None |
+| Low | Low | Low | Low | Low | Low | Low |
+| Medium | NA | Medium | Medium | Medium | Low | Low |
+| High | NA | Critical | Critical | High | Medium | Medium |
 
 DifficultyMatrix:
 | Technical / Logitiscs | Low | Low-Medium | Medium | Medium-High | High |
@@ -82,7 +82,7 @@ For each Interaction, a ResultingBusinessRisks is computed using the same logic 
 Only the algorithm for the s component is described below, for the other components just replace s by t,r,i,d or e:
 1. Iterate over the s list of businessImpact and find the highest severity. Name it maxImpact. If list is empty, return NA.
 2. Iterate over the s list of attackDifficulty, compute difficulty according to DifficultyMatrix and find the lowest difficulty. Name it minDifficulty. If list is empty, return NA.
-3. Compute BusinessRisk from maxImpact and minDifficulty using BusinessRiskMatrix. If maxImpact or minDifficiulty is NA, result is NA.
+3. Compute BusinessRisk from maxImpact and minDifficulty using BusinessRiskMatrix.
 4. Store it in s of ResultingBusinessRisks
 
 # UI
@@ -100,7 +100,7 @@ Under each arrow of the sequence diagram, display the 6 letters S T R I D E sepa
 When clicking on any of those 6 letters, open a modal.
 
 Its title is the STRIDE mapping corresponding to the letter.
-The modal has 2 sections one below the other: Business Impact Scenarios and Attack Scenarios.
+The modal has 3 sections one below the other: Business Impact Scenarios, Attack Scenarios, Resulting Risk.
 
 Section 1 shows the list of BusinessScenario, displaying its title, an Edit button and a Trash button to update or delete this entry.
 There is a + button below the list to insert a BusinessScenario which opens a submodal.
@@ -110,8 +110,11 @@ Section 2 shows the list of TechnicalScenario, displaying its title, an Edit but
 There is a + button below the list to insert a TechnicalScenario which opens a submodal.
 Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built.
 
+Section 3 is a label called Resulting Risk followed by the computed BusinessRisk with the color corresponding to coloring results.
+
 Closing the modal updates businessImpact and attackDifficulty of this letter for this Interaction.
 And then triggers a coloring results for this letter of this Interaction.
+If businessImpact is not NA but businessRisk is NA, add a question mark below this letter.
 
 ## Coloring results
 
@@ -143,6 +146,6 @@ Generate from this JSON a file called {filename}.json and have the browser downl
 Generate in `test_all_risk_scores.js` an explicit list of all the possible values of (technical difficulty, logistics difficulty, business impact) and compute the corresponding business riks according to BusinessRiskMatrix and DifficultyMatrix.
 Make sure:
 * None business impact always returns None
-* Low business impact returns Low
-* Medium business impact never returns more than Medium
-* High business impact returns at least Medium
+* Low business impact always returns Low
+* Medium business impact always return Low, Medium or NA
+* High business impact returns at least Medium or NA

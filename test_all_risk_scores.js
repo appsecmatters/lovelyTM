@@ -9,10 +9,12 @@
 const {
   SEVERITY,
   DIFFICULTY,
+  ATTACK_DIFFICULTY,
   DIFFICULTY_MATRIX,
   BUSINESS_RISK_MATRIX,
   RISK_ORDER,
   combineDifficulty,
+  computeRiskForLetter,
 } = require('./risk_scoring');
 
 // ── Thin helper: raw values → business risk ────────────────────────────────────
@@ -21,7 +23,7 @@ function computeBusinessRisk(businessImpact, techDiff, logsDiff) {
   const combined = combineDifficulty(techDiff, logsDiff);
   if (combined === null) throw new Error(`Unknown difficulty: tech=${techDiff}, logs=${logsDiff}`);
   const iIdx = SEVERITY.indexOf(businessImpact);
-  const dIdx = DIFFICULTY.indexOf(combined);
+  const dIdx = ATTACK_DIFFICULTY.indexOf(combined);
   if (iIdx < 0) throw new Error(`Unknown businessImpact: ${businessImpact}`);
   return BUSINESS_RISK_MATRIX[iIdx][dIdx];
 }
@@ -105,35 +107,52 @@ for (const techDiff of DIFFICULTY) {
   }
 }
 
-// Spec: "Low business impact returns Low"
+// Spec: "Low business impact always returns Low"
 for (const techDiff of DIFFICULTY) {
   for (const logsDiff of DIFFICULTY) {
     assert(techDiff, logsDiff, 'Low', 'Low', 'Low impact → always Low');
   }
 }
 
-// Spec: "Medium business impact never returns more than Medium"
+// Spec: "Medium business impact always returns Low, Medium or NA"
 const mediumIdx = RISK_ORDER.indexOf('Medium');
 for (const techDiff of DIFFICULTY) {
   for (const logsDiff of DIFFICULTY) {
     const risk = computeBusinessRisk('Medium', techDiff, logsDiff);
-    if (RISK_ORDER.indexOf(risk) > mediumIdx) {
-      console.error(`FAIL  tech=${techDiff}, logs=${logsDiff}, impact=Medium → ${risk} exceeds Medium`);
+    if (risk !== 'Low' && risk !== 'Medium' && risk !== 'NA') {
+      console.error(`FAIL  tech=${techDiff}, logs=${logsDiff}, impact=Medium → ${risk} is not Low, Medium or NA`);
       failures++;
     }
   }
 }
 
-// Spec: "High business impact returns at least Medium"
+// Spec: "High business impact returns at least Medium or NA"
 for (const techDiff of DIFFICULTY) {
   for (const logsDiff of DIFFICULTY) {
     const risk = computeBusinessRisk('High', techDiff, logsDiff);
-    if (RISK_ORDER.indexOf(risk) < mediumIdx) {
+    if (risk !== 'NA' && RISK_ORDER.indexOf(risk) < mediumIdx) {
       console.error(`FAIL  tech=${techDiff}, logs=${logsDiff}, impact=High → ${risk} is below Medium`);
       failures++;
     }
   }
 }
+
+// ── NA attack difficulty (empty technicalScenarios) ────────────────────────────
+
+console.log('\nNA attack difficulty (no TechnicalScenarios):');
+
+function assertNADiff(impact, expectedRisk) {
+  const biz = [{ businessImpact: impact }];
+  const actual = computeRiskForLetter(biz, []);
+  const ok = actual === expectedRisk;
+  console.log(`  impact=${impact.padEnd(6)} → ${actual}${ok ? '' : ` (expected ${expectedRisk})`}`);
+  if (!ok) failures++;
+}
+
+assertNADiff('None',   'None');
+assertNADiff('Low',    'Low');
+assertNADiff('Medium', 'NA');
+assertNADiff('High',   'NA');
 
 // ── Spot checks: BusinessRiskMatrix corners ────────────────────────────────────
 

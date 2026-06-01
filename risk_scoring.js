@@ -1,8 +1,14 @@
 // risk_scoring.js — Pure scoring logic, no DOM/UI dependencies.
 // Loaded as a plain <script> in the browser; also importable via require() in Node.
 
-const SEVERITY   = ['None', 'Low', 'Medium', 'High'];
+const SEVERITY = ['None', 'Low', 'Medium', 'High'];
+
+// Used by DifficultyMatrix (user-selectable values only — NA is never combined).
 const DIFFICULTY = ['Low', 'Low-Medium', 'Medium', 'Medium-High', 'High'];
+
+// Used as the column index for BusinessRiskMatrix.
+// NA represents the absence of any TechnicalScenario for this letter.
+const ATTACK_DIFFICULTY = ['NA', 'Low', 'Low-Medium', 'Medium', 'Medium-High', 'High'];
 
 /**
  * DIFFICULTY_MATRIX[techIdx][logsIdx] = combined difficulty
@@ -19,16 +25,16 @@ const DIFFICULTY_MATRIX = [
 ];
 
 /**
- * BUSINESS_RISK_MATRIX[impactIdx][diffIdx] = business risk
- * Rows: Business Impact (None → High)
- * Cols: Attack Difficulty (Low → High)
+ * BUSINESS_RISK_MATRIX[impactIdx][attackDiffIdx] = business risk
+ * Rows: Business Impact  (None → High)
+ * Cols: Attack Difficulty (NA → High)
  */
 const BUSINESS_RISK_MATRIX = [
-  // Diff→ Low       Low-Med    Medium     Med-High   High
-  /* None */   ['None',    'None',    'None',    'None',    'None'   ],
-  /* Low */    ['Low',     'Low',     'Low',     'Low',     'Low'    ],
-  /* Medium */ ['Medium',  'Medium',  'Medium',  'Low',     'Low'    ],
-  /* High */   ['Critical','Critical','High',    'Medium',  'Medium' ],
+  // AttackDiff→ NA      Low        Low-Med    Medium     Med-High   High
+  /* None */   ['None',  'None',    'None',    'None',    'None',    'None'   ],
+  /* Low */    ['Low',   'Low',     'Low',     'Low',     'Low',     'Low'    ],
+  /* Medium */ ['NA',    'Medium',  'Medium',  'Medium',  'Low',     'Low'    ],
+  /* High */   ['NA',    'Critical','Critical','High',    'Medium',  'Medium' ],
 ];
 
 const RISK_ORDER = ['NA', 'None', 'Low', 'Medium', 'High', 'Critical'];
@@ -44,6 +50,9 @@ function combineDifficulty(tech, logistics) {
  * Compute the BusinessRisk for one STRIDE letter of one interaction.
  * businessScenarios  – array of BusinessScenario for this letter
  * technicalScenarios – array of TechnicalScenario for this letter
+ *
+ * When technicalScenarios is empty, attack difficulty is treated as NA.
+ * The matrix then determines the result: None/Low still score, Medium/High return NA.
  */
 function computeRiskForLetter(businessScenarios, technicalScenarios) {
   if (!businessScenarios || businessScenarios.length === 0) return 'NA';
@@ -55,19 +64,24 @@ function computeRiskForLetter(businessScenarios, technicalScenarios) {
   }
   if (maxImpactIdx < 0) return 'NA';
 
-  if (!technicalScenarios || technicalScenarios.length === 0) return 'NA';
-
-  let minDiffIdx = DIFFICULTY.length;
-  for (const t of technicalScenarios) {
-    const combined = combineDifficulty(t.technicalDifficulty, t.logisticsDifficulty);
-    if (combined !== null) {
-      const idx = DIFFICULTY.indexOf(combined);
-      if (idx < minDiffIdx) minDiffIdx = idx;
+  let minAttackDifficulty;
+  if (!technicalScenarios || technicalScenarios.length === 0) {
+    minAttackDifficulty = 'NA';
+  } else {
+    let minDiffIdx = DIFFICULTY.length;
+    for (const t of technicalScenarios) {
+      const combined = combineDifficulty(t.technicalDifficulty, t.logisticsDifficulty);
+      if (combined !== null) {
+        const idx = DIFFICULTY.indexOf(combined);
+        if (idx < minDiffIdx) minDiffIdx = idx;
+      }
     }
+    minAttackDifficulty = minDiffIdx < DIFFICULTY.length ? DIFFICULTY[minDiffIdx] : 'NA';
   }
-  if (minDiffIdx >= DIFFICULTY.length) return 'NA';
 
-  return BUSINESS_RISK_MATRIX[maxImpactIdx][minDiffIdx];
+  const dIdx = ATTACK_DIFFICULTY.indexOf(minAttackDifficulty);
+  if (dIdx < 0) return 'NA';
+  return BUSINESS_RISK_MATRIX[maxImpactIdx][dIdx];
 }
 
 function computeAllRisks(interaction) {
@@ -83,7 +97,7 @@ function computeAllRisks(interaction) {
 
 if (typeof module !== 'undefined') {
   module.exports = {
-    SEVERITY, DIFFICULTY, DIFFICULTY_MATRIX, BUSINESS_RISK_MATRIX, RISK_ORDER,
+    SEVERITY, DIFFICULTY, ATTACK_DIFFICULTY, DIFFICULTY_MATRIX, BUSINESS_RISK_MATRIX, RISK_ORDER,
     combineDifficulty, computeRiskForLetter, computeAllRisks,
   };
 }

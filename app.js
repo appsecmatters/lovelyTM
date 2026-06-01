@@ -136,18 +136,34 @@ function riskClass(risk) {
   return map[risk] || 'stride-na';
 }
 
+function needsQuestionMark(interaction, letter) {
+  return interaction.businessImpact[letter].length > 0 && interaction.risks[letter] === 'NA';
+}
+
 function buildAnnotationDiv(interaction, idx) {
   const div = document.createElement('div');
   div.className = 'stride-annotation';
   div.dataset.interactionIndex = idx;
 
   STRIDE_LETTERS.forEach(letter => {
-    const span = document.createElement('span');
-    span.textContent = letter.toUpperCase();
-    span.title       = STRIDE_NAMES[letter];
-    span.className   = `stride-letter ${riskClass(interaction.risks[letter])}`;
-    span.addEventListener('click', () => openStrideModal(idx, letter));
-    div.appendChild(span);
+    const cell = document.createElement('span');
+    cell.className = 'stride-letter-cell';
+
+    const badge = document.createElement('span');
+    badge.textContent = letter.toUpperCase();
+    badge.title       = STRIDE_NAMES[letter];
+    badge.className   = `stride-letter ${riskClass(interaction.risks[letter])}`;
+    badge.addEventListener('click', () => openStrideModal(idx, letter));
+    cell.appendChild(badge);
+
+    if (needsQuestionMark(interaction, letter)) {
+      const q = document.createElement('span');
+      q.className   = 'stride-question';
+      q.textContent = '?';
+      cell.appendChild(q);
+    }
+
+    div.appendChild(cell);
   });
 
   return div;
@@ -178,16 +194,29 @@ function injectStrideOverlays() {
   });
 }
 
-/** Update only the colour classes on an already-rendered annotation row. */
+/** Update colour classes and ? indicators on an already-rendered annotation row. */
 function refreshAnnotationColors(interactionIndex) {
   const overlay = document.getElementById('strideOverlay');
   const div = overlay.querySelector(`[data-interaction-index="${interactionIndex}"]`);
   if (!div) return;
 
   const interaction = interactions[interactionIndex];
-  const spans = div.querySelectorAll('.stride-letter');
-  spans.forEach((span, i) => {
-    span.className = `stride-letter ${riskClass(interaction.risks[STRIDE_LETTERS[i]])}`;
+  const cells = div.querySelectorAll('.stride-letter-cell');
+  cells.forEach((cell, i) => {
+    const letter = STRIDE_LETTERS[i];
+    cell.querySelector('.stride-letter').className = `stride-letter ${riskClass(interaction.risks[letter])}`;
+
+    const existing = cell.querySelector('.stride-question');
+    if (needsQuestionMark(interaction, letter)) {
+      if (!existing) {
+        const q = document.createElement('span');
+        q.className   = 'stride-question';
+        q.textContent = '?';
+        cell.appendChild(q);
+      }
+    } else {
+      existing?.remove();
+    }
   });
 }
 
@@ -311,6 +340,16 @@ function renderStrideModalContent() {
       </div>
       <button class="btn btn-sm btn-outline-success mt-2"
               onclick="app.showNewTechForm()">+ Add Attack Scenario</button>
+
+      <hr class="my-2">
+
+      <h6 class="fw-semibold text-primary mt-3">Resulting Risk</h6>
+      <p class="mb-0">
+        <span class="stride-letter ${riskClass(computeRiskForLetter(biz, tech))}"
+              style="font-size:0.85rem;padding:3px 10px;">
+          ${computeRiskForLetter(biz, tech)}
+        </span>
+      </p>
     `;
 
     footerEl.innerHTML = `
