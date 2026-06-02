@@ -7,6 +7,8 @@ TODO explain input: https://mermaid.js.org/syntax/sequenceDiagram.html
 
 TODO explain how to play with security requirements priorities
 
+TODO provide a really nice example (loyalty card give points)
+
 ## Not implemented yet
 
 * Most useful security requirement: to reduce overall risk, best effort vs risk reduction
@@ -34,5 +36,6 @@ TODO explain how to play with security requirements priorities
 * Version 0.51: it took 3 minutes. Attack difficulty algorithm with security requirements
 * Version 0.52: it took 6 minutes (server error 1st time after 3.5 minutes). Improve display of security requirements, auto create RequirementInstances for similar interactions
 * Version 0.53: it took 2 minutes. Auto create requirement instances better syncing
-* Version 0.54: it took x minutes (server error 3 times after 3.5 minutes). Display exclamation mark for RequirementInstances to be completed (NA values)
-
+* Version 0.54: it took 3 minutes (server error 3 times after 3.5 minutes). Display exclamation mark for RequirementInstances to be completed (NA values)
+* Version 0.55: it took 2 minutes. Simpler handling of display actions (only when closing main modal). But it took 2 minutes to fix the update exising security requirement bug. And 7 minutes to fix the Delete bug.
+* Version 0.56: it took 1 minute. Redesign Security requirement sub-submodal.

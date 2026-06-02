@@ -1,4 +1,4 @@
-Version 0.54
+Version 0.56
 
 # High level description
 
@@ -42,7 +42,7 @@ ImplementationEffort: VeryLow, Low, Medium, High, VeryHigh
 
 SecurityRequirement: title as String, description as String, source as Actor, destination as Actor, effort as ImplementationEffort
 
-RequirementInstance: secRequirement as SecurityRequirement, techScenario as technicalScenario, updatedTechDifficulty as Difficulty, updatedLogisticsDifficulty as Difficulty
+RequirementInstance: secRequirement as SecurityRequirement, techScenario as TechnicalScenario, updatedTechDifficulty as Difficulty, updatedLogisticsDifficulty as Difficulty
 
 # Business logic
 
@@ -126,18 +126,20 @@ Section 2 shows the list of TechnicalScenario, displaying its title, an Edit but
 There is a + button below the list to insert a TechnicalScenario which opens a submodal.
 Next to this button, display a small help icon and when mouse is over it, show the corresponding message "Estimate the complexity to execute such attack"
 Same icon and content is displayed next to the submodal window title. Submodal window title is "Attack scenario for " + STRIDE mapping.
-Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built and syncing interactions section is called.
+Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built.
 
-In this submodal, there is also the list of RequirementInstance associated to this Technical Scenario (do not display the implementation effort as it could be confusing), a "Create Security Requirement" button which opens a sub-submodal and at the bottom the resulting attack difficulty (computed as step 2 of Processing section). The Delete security requirement buttons deletes all the associated RequirementInstances and then calls the syncing interactions section.
+In this submodal, there is also the list of RequirementInstance associated to this Technical Scenario (do not display the implementation effort as it could be confusing, if technical or logistics value is NA display it in red), a "Create Security Requirement" button which opens a sub-submodal and at the bottom the resulting attack difficulty (computed as step 2 of Processing section). The Delete security requirement button deletes all the RequirementInstances which have a reference to this TechnicalScenario.
 
-This sub-submodal asks for title, description, updated technical difficulty (dropdown of Difficult fields), updated logistics difficulty (dropdown of Difficult fields) and implementation effort (dropdown of ImplementationEffort). When closed, a SecurityRequirement is built with title, description, source as source Actor from the current Interaction, destination as destination actor from the current Interaction, implementation effort.
+This sub-submodal has 2 sections: one for the SecurityRequirement and one for the corresponding RequirementInstance.
+Section1 asks for title, description and implementation effort (dropdown of ImplementationEffort). 
+Section2 has a label "For this attack scenario" and asks for updated technical difficulty (dropdown of Difficult fields), updated logistics difficulty (dropdown of Difficult fields).
+When closed, a SecurityRequirement is built with title, description, source as source Actor from the current Interaction, destination as destination actor from the current Interaction, implementation effort.
 A RequirementInstance is also built with secRequirement as the just built SecurityRequirement, techScenario as the current TechnicalScenario, updatedTechnicalDifficulty and updatedLogisticsDifficult from the dropdown values.
-Now do the syncing interactions section.
 
 Section 3 is a label called Resulting Risk followed by the computed BusinessRisk with the color corresponding to coloring results.
 
 Closing the modal updates businessImpact and attackDifficulty of this letter for this Interaction.
-And then triggers a coloring results for this letter of this Interaction, followed by updating the coverage score.
+And then triggers a coloring results for this letter of this Interaction, calls syncing interactions and finishes by updating the coverage score.
 If businessImpact is not NA but businessRisk is NA, add a question mark below this letter.
 
 ## Syncing interactions

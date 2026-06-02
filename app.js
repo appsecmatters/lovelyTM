@@ -1,5 +1,5 @@
 // ============================================================
-// LiteTM — Lightweight Threat Modeling Tool  (v0.53)
+// LiteTM — Lightweight Threat Modeling Tool  (v0.56)
 // Scoring logic lives in risk_scoring.js (SEVERITY, DIFFICULTY,
 // matrices, combineDifficulty, computeRiskForLetter, computeAllRisks,
 // RISK_ORDER) — all available as globals when loaded before this file.
@@ -192,6 +192,14 @@ function needsQuestionMark(interaction, letter) {
   return interaction.businessImpact[letter].length > 0 && interaction.risks[letter] === 'NA';
 }
 
+function needsExclamationMark(interaction, letter) {
+  return interaction.attackDifficulty[letter].some(ts =>
+    ts.requirementInstances.some(ri =>
+      ri.updatedTechDifficulty === 'NA' || ri.updatedLogisticsDifficulty === 'NA'
+    )
+  );
+}
+
 function buildAnnotationDiv(interaction, idx) {
   const div = document.createElement('div');
   div.className = 'stride-annotation';
@@ -213,6 +221,13 @@ function buildAnnotationDiv(interaction, idx) {
       q.className   = 'stride-question';
       q.textContent = '?';
       cell.appendChild(q);
+    }
+
+    if (needsExclamationMark(interaction, letter)) {
+      const ex = document.createElement('span');
+      ex.className   = 'stride-exclamation';
+      ex.textContent = '!';
+      cell.appendChild(ex);
     }
 
     div.appendChild(cell);
@@ -268,6 +283,18 @@ function refreshAnnotationColors(interactionIndex) {
       }
     } else {
       existing?.remove();
+    }
+
+    const existingEx = cell.querySelector('.stride-exclamation');
+    if (needsExclamationMark(interaction, letter)) {
+      if (!existingEx) {
+        const ex = document.createElement('span');
+        ex.className   = 'stride-exclamation';
+        ex.textContent = '!';
+        cell.appendChild(ex);
+      }
+    } else {
+      existingEx?.remove();
     }
   });
 }
@@ -339,11 +366,13 @@ function openStrideModal(interactionIndex, letter) {
 }
 
 function closeStrideModal() {
-  // Recompute risks, refresh STRIDE letter badges, and tint the message text
-  const interaction = interactions[modalCtx.interactionIndex];
-  interaction.risks = computeAllRisks(interaction);
-  refreshAnnotationColors(modalCtx.interactionIndex);
-  updateMessageTextColor(modalCtx.interactionIndex);
+  const idx = modalCtx.interactionIndex;
+  interactions[idx].risks = computeAllRisks(interactions[idx]);
+  updateMessageTextColor(idx);
+  // Sync secRequirements to all matching interactions, then refresh every annotation
+  // (covers risk colours, ? marks and ! marks across all interactions at once)
+  syncAllForInteraction(idx);
+  interactions.forEach((_, i) => refreshAnnotationColors(i));
   updateCoverageScore();
   bsStrideModal.hide();
 }
@@ -492,7 +521,7 @@ function renderStrideModalContent() {
             <div class="scenario-row">
               <div class="flex-grow-1">
                 <span class="fw-medium">${escapeHtml(ri.secRequirement.title)}</span>
-                <br><small class="text-muted">Tech: ${escapeHtml(ri.updatedTechDifficulty)} / Log: ${escapeHtml(ri.updatedLogisticsDifficulty)}</small>
+                <br><small class="text-muted">Tech: <span${ri.updatedTechDifficulty === 'NA' ? ' class="text-danger fw-semibold"' : ''}>${escapeHtml(ri.updatedTechDifficulty)}</span> / Log: <span${ri.updatedLogisticsDifficulty === 'NA' ? ' class="text-danger fw-semibold"' : ''}>${escapeHtml(ri.updatedLogisticsDifficulty)}</span></small>
                 ${ri.secRequirement.description ? `<br><small class="text-muted">${escapeHtml(ri.secRequirement.description)}</small>` : ''}
               </div>
               <div class="d-flex gap-1 flex-shrink-0">
@@ -565,6 +594,7 @@ function renderStrideModalContent() {
     titleEl.innerHTML = `Security Requirement for ${escapeHtml(STRIDE_NAMES[letter])}`;
 
     bodyEl.innerHTML = `
+      <h6 class="fw-semibold text-primary mb-3">Security Requirement</h6>
       <div class="mb-3">
         <label class="form-label fw-medium">Title <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="reqTitle"
@@ -576,6 +606,18 @@ function renderStrideModalContent() {
         <textarea class="form-control" id="reqDescription" rows="3"
                   placeholder="Describe the security control…">${existingReq ? escapeHtml(existingReq.secRequirement.description) : ''}</textarea>
       </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium">Implementation Effort</label>
+        <select class="form-select" id="reqEffort">
+          ${IMPLEMENTATION_EFFORT.map(ef =>
+            `<option value="${ef}"${existingReq && existingReq.secRequirement.effort === ef ? ' selected' : ''}>${ef}</option>`
+          ).join('')}
+        </select>
+      </div>
+
+      <hr class="my-3">
+
+      <h6 class="fw-semibold text-primary mb-3">For this attack scenario</h6>
       <div class="mb-3">
         <label class="form-label fw-medium">Updated Technical Difficulty</label>
         <select class="form-select" id="reqTechDiff">
@@ -589,14 +631,6 @@ function renderStrideModalContent() {
         <select class="form-select" id="reqLogsDiff">
           ${ATTACK_DIFFICULTY.map(d =>
             `<option value="${d}"${existingReq && existingReq.updatedLogisticsDifficulty === d ? ' selected' : ''}>${d}</option>`
-          ).join('')}
-        </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label fw-medium">Implementation Effort</label>
-        <select class="form-select" id="reqEffort">
-          ${IMPLEMENTATION_EFFORT.map(ef =>
-            `<option value="${ef}"${existingReq && existingReq.secRequirement.effort === ef ? ' selected' : ''}>${ef}</option>`
           ).join('')}
         </select>
       </div>
@@ -668,7 +702,6 @@ function saveTechnicalScenario() {
   } else {
     list.push(scenario);
   }
-  syncAllForInteraction(modalCtx.interactionIndex);
 
   modalCtx.page = 'main';
   modalCtx.editIndex = -1;
@@ -680,7 +713,7 @@ function saveTechnicalScenario() {
  * add a placeholder RequirementInstance (NA difficulties) to every TechnicalScenario
  * of every matching Interaction that doesn't already reference this secRequirement.
  */
-function syncInteractions(src, dst, secReq) {
+function syncInteractions(src, dst, secReq, originTs) {
   for (const ia of interactions) {
     if (ia.source !== src || ia.destination !== dst) continue;
     for (const l of STRIDE_LETTERS) {
@@ -688,6 +721,7 @@ function syncInteractions(src, dst, secReq) {
         if (!ts.requirementInstances.some(ri => ri.secRequirement === secReq)) {
           ts.requirementInstances.push({
             secRequirement:             secReq,
+            techScenario:               originTs,               // back-ref; excluded from JSON export
             updatedTechDifficulty:      'NA',
             updatedLogisticsDifficulty: 'NA',
           });
@@ -705,18 +739,23 @@ function syncInteractions(src, dst, secReq) {
 function syncAllForInteraction(interactionIdx) {
   const src  = interactions[interactionIdx].source;
   const dst  = interactions[interactionIdx].destination;
-  const seen = new Set();
+  const seen = new Map(); // secReq → originTs
 
   for (const ia of interactions) {
     if (ia.source !== src || ia.destination !== dst) continue;
     for (const l of STRIDE_LETTERS) {
       for (const ts of ia.attackDifficulty[l]) {
-        for (const ri of ts.requirementInstances) seen.add(ri.secRequirement);
+        for (const ri of ts.requirementInstances) {
+          if (!seen.has(ri.secRequirement)) {
+            // ri.techScenario is the origin if already stamped, otherwise the containing ts
+            seen.set(ri.secRequirement, ri.techScenario || ts);
+          }
+        }
       }
     }
   }
 
-  for (const secReq of seen) syncInteractions(src, dst, secReq);
+  for (const [secReq, originTs] of seen) syncInteractions(src, dst, secReq, originTs);
 }
 
 function saveRequirement() {
@@ -730,23 +769,29 @@ function saveRequirement() {
   const interaction  = interactions[modalCtx.interactionIndex];
   const techScenario = interaction.attackDifficulty[modalCtx.letter][modalCtx.editIndex];
 
-  const instance = {
-    secRequirement: {
-      title,
-      description:  document.getElementById('reqDescription').value.trim(),
-      source:       interaction.source,
-      destination:  interaction.destination,
-      effort:       document.getElementById('reqEffort').value,
-    },
-    updatedTechDifficulty:      document.getElementById('reqTechDiff').value,
-    updatedLogisticsDifficulty: document.getElementById('reqLogsDiff').value,
-  };
-
   if (modalCtx.reqEditIndex >= 0) {
-    techScenario.requirementInstances[modalCtx.reqEditIndex] = instance;
+    // Mutate in place so every RequirementInstance that shares this secRequirement
+    // object reference (propagated placeholders) sees the updated metadata without
+    // syncAllForInteraction treating the old reference as a separate requirement.
+    const inst = techScenario.requirementInstances[modalCtx.reqEditIndex];
+    inst.secRequirement.title       = title;
+    inst.secRequirement.description = document.getElementById('reqDescription').value.trim();
+    inst.secRequirement.effort      = document.getElementById('reqEffort').value;
+    inst.updatedTechDifficulty      = document.getElementById('reqTechDiff').value;
+    inst.updatedLogisticsDifficulty = document.getElementById('reqLogsDiff').value;
   } else {
-    techScenario.requirementInstances.push(instance);
-    syncInteractions(interaction.source, interaction.destination, instance.secRequirement);
+    techScenario.requirementInstances.push({
+      secRequirement: {
+        title,
+        description:  document.getElementById('reqDescription').value.trim(),
+        source:       interaction.source,
+        destination:  interaction.destination,
+        effort:       document.getElementById('reqEffort').value,
+      },
+      techScenario,                                              // back-ref; excluded from JSON export
+      updatedTechDifficulty:      document.getElementById('reqTechDiff').value,
+      updatedLogisticsDifficulty: document.getElementById('reqLogsDiff').value,
+    });
   }
 
   modalCtx.page = 'newTech';
@@ -796,8 +841,29 @@ const app = {
     renderStrideModalContent();
   },
   deleteRequirement(index) {
-    const interaction = interactions[modalCtx.interactionIndex];
-    interaction.attackDifficulty[modalCtx.letter][modalCtx.editIndex].requirementInstances.splice(index, 1);
+    const interaction  = interactions[modalCtx.interactionIndex];
+    const techScenario = interaction.attackDifficulty[modalCtx.letter][modalCtx.editIndex];
+    const originTs     = techScenario.requirementInstances[index].techScenario;
+
+    if (originTs) {
+      // Delete every RequirementInstance whose techScenario back-ref points to the
+      // TechnicalScenario of the current modal (covers primary + propagated placeholders)
+      for (const ia of interactions) {
+        for (const l of STRIDE_LETTERS) {
+          for (const ts of ia.attackDifficulty[l]) {
+            for (let i = ts.requirementInstances.length - 1; i >= 0; i--) {
+              if (ts.requirementInstances[i].techScenario === originTs) {
+                ts.requirementInstances.splice(i, 1);
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Fallback for imported data where the back-ref was stripped during export
+      techScenario.requirementInstances.splice(index, 1);
+    }
+
     renderStrideModalContent();
   },
 };
@@ -808,7 +874,9 @@ window.app = app;
 // ============================================================
 
 function exportData(filename) {
-  const payload = JSON.stringify({ sequenceDiagram: diagramMarkdown, interactions }, null, 2);
+  // 'techScenario' is a transient back-reference (circular); strip it from the export
+  const replacer = (key, value) => key === 'techScenario' ? undefined : value;
+  const payload = JSON.stringify({ sequenceDiagram: diagramMarkdown, interactions }, replacer, 2);
   const blob    = new Blob([payload], { type: 'application/json' });
   const url     = URL.createObjectURL(blob);
   const a       = document.createElement('a');
