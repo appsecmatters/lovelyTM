@@ -140,6 +140,7 @@
     <div id="diagramContainer"></div>
     <div id="strideOverlay"></div>
   </div>
+  <div id="secReqTable"></div>
 </div>
 
 <!-- ===== Import Modal ===== -->
@@ -214,6 +215,40 @@
       <div class="modal-body" id="crashCourseBody"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Edit SecurityRequirement Modal ===== -->
+<div class="modal fade" id="editSecReqModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Security Requirement</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-medium">Title <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="editSecReqTitle">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-medium">Description</label>
+          <textarea class="form-control" id="editSecReqDesc" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-medium">Implementation Effort</label>
+          <select class="form-select" id="editSecReqEffort"></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-medium">Status</label>
+          <select class="form-select" id="editSecReqStatus"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="editSecReqSaveBtn">Save</button>
       </div>
     </div>
   </div>

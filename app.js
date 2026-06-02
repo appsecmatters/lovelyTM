@@ -1,5 +1,5 @@
 // ============================================================
-// LiteTM — Lightweight Threat Modeling Tool  (v0.56)
+// LiteTM — Lightweight Threat Modeling Tool  (v0.63)
 // Scoring logic lives in risk_scoring.js (SEVERITY, DIFFICULTY,
 // matrices, combineDifficulty, computeRiskForLetter, computeAllRisks,
 // RISK_ORDER) — all available as globals when loaded before this file.
@@ -41,6 +41,8 @@ const HELP_BUSINESS_IMPACT   = 'Supposing such attack is possible, what would be
 const HELP_ATTACK_DIFFICULTY = 'Estimate the complexity to execute such attack';
 
 const IMPLEMENTATION_EFFORT = ['VeryLow', 'Low', 'Medium', 'High', 'VeryHigh'];
+
+const REQUIREMENT_STATUS = ['NA', 'Backlog', 'Planned', 'Implemented'];
 
 /**
  * Single-pass regex: matches either an HTML tag (returned unchanged) or a STRIDE
@@ -97,12 +99,22 @@ let modalCtx = {
   reqEditIndex: -1,
 };
 
+/** Sort state for the Security Requirements Summary table. */
+let tableSort = { col: null, asc: true };
+
+/** Stable reference list used by table row onclick handlers (rebuilt on each render). */
+let _currentSecReqs = [];
+
+/** SecurityRequirement currently being edited via the table's Edit modal. */
+let editSecReqTarget = null;
+
 // Bootstrap modal instances — initialised in DOMContentLoaded
 let bsStrideModal;
 let bsImportModal;
 let bsExportModal;
 let bsCrashCourseModal;
 let bsRiskScoringModal;
+let bsEditSecReqModal;
 
 // ============================================================
 // Sequence Diagram Parser
@@ -356,6 +368,127 @@ function updateCoverageScore() {
 }
 
 // ============================================================
+// Security Requirements Table
+// ============================================================
+
+/** Collect every unique SecurityRequirement object from all interactions. */
+function collectAllSecRequirements() {
+  const seen = new Set();
+  const list = [];
+  for (const ia of interactions) {
+    for (const l of STRIDE_LETTERS) {
+      for (const ts of ia.attackDifficulty[l]) {
+        for (const ri of ts.requirementInstances) {
+          if (!seen.has(ri.secRequirement)) {
+            seen.add(ri.secRequirement);
+            list.push(ri.secRequirement);
+          }
+        }
+      }
+    }
+  }
+  return list;
+}
+
+/**
+ * Apply current tableSort to an array of row objects { req, score, efficiency }.
+ * Risk/Efficiency cols use a split sort: non-Implemented rows first, Implemented last.
+ */
+function sortSecReqRows(rows) {
+  const { col, asc } = tableSort;
+  if (!col) return rows;
+  const dir = asc ? 1 : -1;
+
+  const cmp = (a, b) => {
+    switch (col) {
+      case 'title':
+        return dir * a.req.title.toLowerCase().localeCompare(b.req.title.toLowerCase());
+      case 'effort':
+        return dir * (IMPLEMENTATION_EFFORT.indexOf(a.req.effort) -
+                      IMPLEMENTATION_EFFORT.indexOf(b.req.effort));
+      case 'status': {
+        const ai = REQUIREMENT_STATUS.indexOf(a.req.status || 'NA');
+        const bi = REQUIREMENT_STATUS.indexOf(b.req.status || 'NA');
+        return dir * (ai - bi);
+      }
+      case 'risk':       return dir * (a.score      - b.score);
+      case 'efficiency': return dir * (a.efficiency - b.efficiency);
+      default: return 0;
+    }
+  };
+
+  if (col === 'risk' || col === 'efficiency') {
+    const notImpl = rows.filter(r => (r.req.status || 'NA') !== 'Implemented');
+    const impl    = rows.filter(r => (r.req.status || 'NA') === 'Implemented');
+    return [...notImpl.sort(cmp), ...impl.sort(cmp)];
+  }
+  return [...rows].sort(cmp);
+}
+
+function buildSecReqTableHtml() {
+  _currentSecReqs = collectAllSecRequirements();
+  if (_currentSecReqs.length === 0) return '';
+
+  // Precompute scores then sort (keep original index for onclick references)
+  const rowData = _currentSecReqs.map((req, idx) => {
+    const { score, efficiency } = computeRequirementScores(req, interactions);
+    return { req, idx, score, efficiency };
+  });
+  const sorted = sortSecReqRows(rowData);
+
+  const COL_DEFS = [
+    { key: 'title',      label: 'Title',                 sortable: true  },
+    { key: 'desc',       label: 'Description',           sortable: false },
+    { key: 'effort',     label: 'Implementation Effort', sortable: true  },
+    { key: 'status',     label: 'Status',                sortable: true  },
+    { key: 'risk',       label: 'Risk Reduction',        sortable: true  },
+    { key: 'efficiency', label: 'Efficiency Score',      sortable: true  },
+  ];
+
+  const headerCells = COL_DEFS.map(col => {
+    if (!col.sortable) return `<th>${col.label}</th>`;
+    const active = tableSort.col === col.key;
+    const arrow  = active ? (tableSort.asc ? ' ▲' : ' ▼') : ' ⇅';
+    return `<th style="cursor:pointer;user-select:none"
+                onclick="app.sortSecReqTable('${col.key}')">${col.label}${arrow}</th>`;
+  }).join('');
+
+  const bodyRows = sorted.map(({ req, idx, score, efficiency }) => {
+    const implemented = (req.status || 'NA') === 'Implemented';
+    return `
+    <tr${implemented ? ' class="table-secondary"' : ''}>
+      <td>
+        <div>${escapeHtml(req.title)}</div>
+        <div class="d-flex gap-1 mt-1">
+          <button class="btn btn-sm btn-outline-secondary py-0"
+                  onclick="app.editSecReq(${idx})" title="Edit">✏️</button>
+          <button class="btn btn-sm btn-outline-danger py-0"
+                  onclick="app.deleteSecReq(${idx})" title="Delete">🗑</button>
+        </div>
+      </td>
+      <td>${escapeHtml(req.description || '')}</td>
+      <td>${escapeHtml(req.effort)}</td>
+      <td>${escapeHtml(req.status || 'NA')}</td>
+      <td>${score}</td>
+      <td>${efficiency.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <h6 class="fw-semibold mt-4 mb-2">Security Requirements Summary</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered table-hover mb-0">
+        <thead class="table-light"><tr>${headerCells}</tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>`;
+}
+
+function updateSecReqTable() {
+  document.getElementById('secReqTable').innerHTML = buildSecReqTableHtml();
+}
+
+// ============================================================
 // STRIDE Modal
 // ============================================================
 
@@ -374,6 +507,7 @@ function closeStrideModal() {
   syncAllForInteraction(idx);
   interactions.forEach((_, i) => refreshAnnotationColors(i));
   updateCoverageScore();
+  updateSecReqTable();
   bsStrideModal.hide();
 }
 
@@ -614,6 +748,14 @@ function renderStrideModalContent() {
           ).join('')}
         </select>
       </div>
+      <div class="mb-3">
+        <label class="form-label fw-medium">Status</label>
+        <select class="form-select" id="reqStatus">
+          ${REQUIREMENT_STATUS.map(s =>
+            `<option value="${s}"${existingReq && existingReq.secRequirement.status === s ? ' selected' : ''}>${s}</option>`
+          ).join('')}
+        </select>
+      </div>
 
       <hr class="my-3">
 
@@ -777,6 +919,7 @@ function saveRequirement() {
     inst.secRequirement.title       = title;
     inst.secRequirement.description = document.getElementById('reqDescription').value.trim();
     inst.secRequirement.effort      = document.getElementById('reqEffort').value;
+    inst.secRequirement.status      = document.getElementById('reqStatus').value;
     inst.updatedTechDifficulty      = document.getElementById('reqTechDiff').value;
     inst.updatedLogisticsDifficulty = document.getElementById('reqLogsDiff').value;
   } else {
@@ -787,6 +930,7 @@ function saveRequirement() {
         source:       interaction.source,
         destination:  interaction.destination,
         effort:       document.getElementById('reqEffort').value,
+        status:       document.getElementById('reqStatus').value,
       },
       techScenario,                                              // back-ref; excluded from JSON export
       updatedTechDifficulty:      document.getElementById('reqTechDiff').value,
@@ -829,6 +973,53 @@ const app = {
   deleteTechnicalScenario(index) {
     interactions[modalCtx.interactionIndex].attackDifficulty[modalCtx.letter].splice(index, 1);
     renderStrideModalContent();
+  },
+  editSecReq(idx) {
+    editSecReqTarget = _currentSecReqs[idx];
+    if (!editSecReqTarget) return;
+    document.getElementById('editSecReqTitle').value  = editSecReqTarget.title;
+    document.getElementById('editSecReqDesc').value   = editSecReqTarget.description || '';
+    // Set effort dropdown
+    const effortSel = document.getElementById('editSecReqEffort');
+    effortSel.innerHTML = IMPLEMENTATION_EFFORT.map(e =>
+      `<option value="${e}"${editSecReqTarget.effort === e ? ' selected' : ''}>${e}</option>`
+    ).join('');
+    // Set status dropdown
+    const statusSel = document.getElementById('editSecReqStatus');
+    statusSel.innerHTML = REQUIREMENT_STATUS.map(s =>
+      `<option value="${s}"${(editSecReqTarget.status || 'NA') === s ? ' selected' : ''}>${s}</option>`
+    ).join('');
+    bsEditSecReqModal.show();
+  },
+  deleteSecReq(idx) {
+    const secReq = _currentSecReqs[idx];
+    if (!secReq) return;
+    // Remove all RequirementInstances referencing this SecurityRequirement
+    for (const ia of interactions) {
+      for (const l of STRIDE_LETTERS) {
+        for (const ts of ia.attackDifficulty[l]) {
+          ts.requirementInstances = ts.requirementInstances.filter(
+            ri => ri.secRequirement !== secReq
+          );
+        }
+      }
+    }
+    // Coloring results: recompute risks and refresh all visuals
+    interactions.forEach((ia, i) => {
+      ia.risks = computeAllRisks(ia);
+      updateMessageTextColor(i);
+    });
+    interactions.forEach((_, i) => refreshAnnotationColors(i));
+    updateCoverageScore();
+    updateSecReqTable();
+  },
+  sortSecReqTable(col) {
+    if (tableSort.col === col) {
+      tableSort.asc = !tableSort.asc;
+    } else {
+      tableSort = { col, asc: true };
+    }
+    updateSecReqTable();
   },
   showNewRequirementForm() {
     modalCtx.reqEditIndex = -1;
@@ -1009,6 +1200,24 @@ document.addEventListener('DOMContentLoaded', () => {
   bsExportModal       = new bootstrap.Modal(document.getElementById('exportModal'));
   bsCrashCourseModal  = new bootstrap.Modal(document.getElementById('crashCourseModal'));
   bsRiskScoringModal  = new bootstrap.Modal(document.getElementById('riskScoringModal'));
+  bsEditSecReqModal   = new bootstrap.Modal(document.getElementById('editSecReqModal'));
+
+  // ── Edit SecurityRequirement (from table) ──────────────────
+  document.getElementById('editSecReqSaveBtn').addEventListener('click', () => {
+    if (!editSecReqTarget) return;
+    const titleInput = document.getElementById('editSecReqTitle');
+    const title = titleInput.value.trim();
+    if (!title) { titleInput.classList.add('is-invalid'); return; }
+    // Mutate in place so all RequirementInstance references remain valid
+    editSecReqTarget.title       = title;
+    editSecReqTarget.description = document.getElementById('editSecReqDesc').value.trim();
+    editSecReqTarget.effort      = document.getElementById('editSecReqEffort').value;
+    editSecReqTarget.status      = document.getElementById('editSecReqStatus').value;
+    editSecReqTarget = null;
+    bsEditSecReqModal.hide();
+    interactions.forEach((_, i) => refreshAnnotationColors(i));
+    updateSecReqTable();
+  });
 
   // ── Import ─────────────────────────────────────────────────
   document.getElementById('importBtn').addEventListener('click', () => {
@@ -1054,6 +1263,7 @@ document.addEventListener('DOMContentLoaded', () => {
       injectStrideOverlays();
       colorAllMessageTexts();
       updateCoverageScore();
+      updateSecReqTable();
 
     } catch (err) {
       // Render failed — keep modal open and show the error.
@@ -1120,6 +1330,7 @@ document.addEventListener('DOMContentLoaded', () => {
       injectStrideOverlays();
       colorAllMessageTexts();
       updateCoverageScore();
+      updateSecReqTable();
 
     } catch (err) {
       document.getElementById(`d${renderId}`)?.remove();

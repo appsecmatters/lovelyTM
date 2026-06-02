@@ -13,9 +13,11 @@ const {
   DIFFICULTY_MATRIX,
   BUSINESS_RISK_MATRIX,
   RISK_ORDER,
+  EFFORT_SCORE,
   combineDifficulty,
   computeAttackDifficultyForScenario,
   computeRiskForLetter,
+  computeRequirementScores,
 } = require('./risk_scoring');
 
 // ── Thin helper: raw values → business risk ────────────────────────────────────
@@ -315,6 +317,187 @@ assertRiskWithReqs(
   'Critical',  // fallback to Low → Critical
   'High impact, all-NA req → fallback Low → Critical'
 );
+
+// ── computeRequirementScores ──────────────────────────────────────────────────
+
+console.log('\ncomputeRequirementScores:');
+
+// Assert helper: checks score (and optionally efficiency within 0.001)
+function assertReqScore(label, secReq, ias, expectedScore, expectedEff) {
+  const { score, efficiency } = computeRequirementScores(secReq, ias);
+  const scoreOk = score === expectedScore;
+  const effOk   = expectedEff === undefined || Math.abs(efficiency - expectedEff) < 0.001;
+  if (!scoreOk || !effOk) {
+    const effNote = expectedEff !== undefined ? ` eff=${expectedEff.toFixed(3)}` : '';
+    console.error(`FAIL  ${label}: expected score=${expectedScore}${effNote}, got score=${score} eff=${efficiency.toFixed(3)}`);
+    failures++;
+  } else {
+    console.log(`  ${label}: score=${score} eff=${efficiency.toFixed(2)} ✓`);
+  }
+}
+
+// Build one interaction with a single TechScenario + RequirementInstance in STRIDE letter 's'
+function mkReqInteraction(src, dst, bizImpact, tsDiff, reqDiff, secReq) {
+  const ri = {
+    secRequirement:             secReq,
+    updatedTechDifficulty:      reqDiff[0],
+    updatedLogisticsDifficulty: reqDiff[1],
+  };
+  const ts = { technicalDifficulty: tsDiff[0], logisticsDifficulty: tsDiff[1], requirementInstances: [ri] };
+  const biz = bizImpact ? [{ businessImpact: bizImpact }] : [];
+  return {
+    source: src, destination: dst,
+    businessImpact:   { s: biz, t: [], r: [], i: [], d: [], e: [] },
+    attackDifficulty: { s: [ts], t: [], r: [], i: [], d: [], e: [] },
+  };
+}
+
+function mkSecReq(title, effort, src, dst) {
+  return { title, description: '', source: src, destination: dst, effort, status: 'NA' };
+}
+
+// ── Baseline: no contribution cases ───────────────────────────────────────────
+
+const srBase = mkSecReq('base', 'Low', 'A', 'B');
+
+// NA placeholder → 0 (updatedTech/Logs not yet filled in)
+assertReqScore(
+  'NA placeholder → score 0',
+  srBase,
+  [mkReqInteraction('A', 'B', 'High', ['Low', 'Low'], ['NA', 'NA'], srBase)],
+  0
+);
+
+// No business scenarios → skip (maxImpactIdx = -1)
+assertReqScore(
+  'no business scenarios → score 0',
+  srBase,
+  [mkReqInteraction('A', 'B', null, ['Low', 'Low'], ['Medium-High', 'Low'], srBase)],
+  0
+);
+
+// Same updated difficulty as default → same risk → 0
+assertReqScore(
+  'same difficulty → score 0',
+  srBase,
+  [mkReqInteraction('A', 'B', 'High', ['Low', 'Low'], ['Low', 'Low'], srBase)],
+  0
+);
+
+// ── Spot-check each reachable BUSINESS_RISK_SCORE_TABLE entry ─────────────────
+
+// TABLE[1][3] = 4 : updated=Medium, default=Critical
+//   High impact + default Low+Low=Low → Critical; updated Medium-High+Low=Medium-High → Medium
+{
+  const sr = mkSecReq('T[1][3]', 'Low', 'A', 'B');
+  assertReqScore(
+    'TABLE[Medium][Critical]=4',
+    sr,
+    [mkReqInteraction('A', 'B', 'High', ['Low', 'Low'], ['Medium-High', 'Low'], sr)],
+    4,
+    4 / EFFORT_SCORE['Low']   // 4/3
+  );
+}
+
+// TABLE[2][3] = 2 : updated=High, default=Critical
+//   High impact + default Low+Low=Low → Critical; updated Medium+Low=Medium → High
+{
+  const sr = mkSecReq('T[2][3]', 'Medium', 'A', 'B');
+  assertReqScore(
+    'TABLE[High][Critical]=2',
+    sr,
+    [mkReqInteraction('A', 'B', 'High', ['Low', 'Low'], ['Medium', 'Low'], sr)],
+    2,
+    2 / EFFORT_SCORE['Medium']  // 2/10
+  );
+}
+
+// TABLE[0][1] = 1 : updated=Low, default=Medium
+//   Medium impact + default Low+Low=Low → Medium; updated Medium-High+Low=Medium-High → Low
+{
+  const sr = mkSecReq('T[0][1]', 'VeryLow', 'A', 'B');
+  assertReqScore(
+    'TABLE[Low][Medium]=1',
+    sr,
+    [mkReqInteraction('A', 'B', 'Medium', ['Low', 'Low'], ['Medium-High', 'Low'], sr)],
+    1,
+    1 / EFFORT_SCORE['VeryLow']  // 1/1
+  );
+}
+
+// TABLE[1][2] = 2 : updated=Medium, default=High
+//   High impact + default Medium+Low=Medium → High; updated Medium-High+Low=Medium-High → Medium
+{
+  const sr = mkSecReq('T[1][2]', 'High', 'A', 'B');
+  assertReqScore(
+    'TABLE[Medium][High]=2',
+    sr,
+    [mkReqInteraction('A', 'B', 'High', ['Medium', 'Low'], ['Medium-High', 'Low'], sr)],
+    2,
+    2 / EFFORT_SCORE['High']  // 2/30
+  );
+}
+
+// ── Key invariant: two requirements on the same TechScenario → different scores ─
+
+console.log('\n  Different requirements must not always return the same score:');
+{
+  const srStrong = mkSecReq('strong', 'Low', 'A', 'B');
+  const srWeak   = mkSecReq('weak',   'Low', 'A', 'B');
+  const ts = {
+    technicalDifficulty: 'Low', logisticsDifficulty: 'Low',
+    requirementInstances: [
+      { secRequirement: srStrong, updatedTechDifficulty: 'Medium-High', updatedLogisticsDifficulty: 'Low' },
+      { secRequirement: srWeak,   updatedTechDifficulty: 'Low',          updatedLogisticsDifficulty: 'Low' },
+    ],
+  };
+  const ia = {
+    source: 'A', destination: 'B',
+    businessImpact:   { s: [{ businessImpact: 'High' }], t: [], r: [], i: [], d: [], e: [] },
+    attackDifficulty: { s: [ts], t: [], r: [], i: [], d: [], e: [] },
+  };
+  assertReqScore('2 reqs same TS — strong (expect 4)', srStrong, [ia], 4);
+  assertReqScore('2 reqs same TS — weak   (expect 0)', srWeak,   [ia], 0);
+  const sStrong = computeRequirementScores(srStrong, [ia]).score;
+  const sWeak   = computeRequirementScores(srWeak,   [ia]).score;
+  if (sStrong !== sWeak) {
+    console.log('  Confirmed: different requirements produce different scores (' + sStrong + ' ≠ ' + sWeak + ') ✓');
+  } else {
+    console.error('FAIL  different requirements returned the same score (' + sStrong + ')');
+    failures++;
+  }
+}
+
+// ── Actor-pair filtering ───────────────────────────────────────────────────────
+
+{
+  const srAB = mkSecReq('AB', 'Low', 'A', 'B');
+  const srAC = mkSecReq('AC', 'Low', 'A', 'C');
+  const iaAB = mkReqInteraction('A', 'B', 'High', ['Low', 'Low'], ['Medium-High', 'Low'], srAB);
+  const iaAC = mkReqInteraction('A', 'C', 'High', ['Low', 'Low'], ['Medium-High', 'Low'], srAC);
+
+  // Each req scores 4 against its own interaction and 0 against the other
+  assertReqScore('A→B req vs [A→B, A→C] interactions', srAB, [iaAB, iaAC], 4);
+  assertReqScore('A→C req vs [A→B, A→C] interactions', srAC, [iaAB, iaAC], 4);
+  assertReqScore('A→B req vs A→C-only interactions (expect 0)', srAB, [iaAC], 0);
+}
+
+// ── Multiple TechScenarios accumulate ─────────────────────────────────────────
+
+{
+  const sr = mkSecReq('multi', 'Low', 'A', 'B');
+  const riS = { secRequirement: sr, updatedTechDifficulty: 'Medium-High', updatedLogisticsDifficulty: 'Low' };
+  const riT = { secRequirement: sr, updatedTechDifficulty: 'Medium-High', updatedLogisticsDifficulty: 'Low' };
+  const tsS = { technicalDifficulty: 'Low', logisticsDifficulty: 'Low', requirementInstances: [riS] };
+  const tsT = { technicalDifficulty: 'Low', logisticsDifficulty: 'Low', requirementInstances: [riT] };
+  const ia = {
+    source: 'A', destination: 'B',
+    businessImpact:   { s: [{ businessImpact: 'High' }], t: [{ businessImpact: 'High' }], r: [], i: [], d: [], e: [] },
+    attackDifficulty: { s: [tsS], t: [tsT], r: [], i: [], d: [], e: [] },
+  };
+  // Each scenario contributes TABLE[1][3]=4 → total = 8
+  assertReqScore('2 TechScenarios across 2 STRIDE letters (expect 8)', sr, [ia], 8);
+}
 
 // ── Result ─────────────────────────────────────────────────────────────────────
 

@@ -11,7 +11,7 @@ TODO provide a really nice example (loyalty card give points)
 
 ## Not implemented yet
 
-* Most useful security requirement: to reduce overall risk, best effort vs risk reduction
+* Show Security Requirement by showing a circle of the defaultBusinessRisk color below the STRIDE letters
 
 * Reusing scenarios for different interactions/stride letters (to be detailed for same source/destination)
 
@@ -39,3 +39,9 @@ TODO provide a really nice example (loyalty card give points)
 * Version 0.54: it took 3 minutes (server error 3 times after 3.5 minutes). Display exclamation mark for RequirementInstances to be completed (NA values)
 * Version 0.55: it took 2 minutes. Simpler handling of display actions (only when closing main modal). But it took 2 minutes to fix the update exising security requirement bug. And 7 minutes to fix the Delete bug.
 * Version 0.56: it took 1 minute. Redesign Security requirement sub-submodal.
+* Version 0.60: it took 3 minutes. Security requirements summary table. Naive scoring
+* Version 0.61: it took 3 minutes. Risk reduction and efficency scoring
+* Version 0.62: it took 6 minues. Fix risk reduction scoring
+* Version 0.63: it took 3 minutes. Fix bugs scoring + screen refresh when deleting security requirements
+* Version 0.64: it took 4 minutes. Clarify risk reduction scoring should yield different results + tests
+

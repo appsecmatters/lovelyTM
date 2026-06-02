@@ -1,4 +1,4 @@
-Version 0.56
+Version 0.64
 
 # High level description
 
@@ -40,7 +40,9 @@ Interaction: source as Actor, destination as Actor, businessImpact as BusinessIm
 
 ImplementationEffort: VeryLow, Low, Medium, High, VeryHigh
 
-SecurityRequirement: title as String, description as String, source as Actor, destination as Actor, effort as ImplementationEffort
+RequirementStatus: Enum (ordered) with values NA, Backlog, Planned, Implemented
+
+SecurityRequirement: title as String, description as String, source as Actor, destination as Actor, effort as ImplementationEffort, status as RequirementStatus
 
 RequirementInstance: secRequirement as SecurityRequirement, techScenario as TechnicalScenario, updatedTechDifficulty as Difficulty, updatedLogisticsDifficulty as Difficulty
 
@@ -109,6 +111,7 @@ If there is a syntax error, the modal cannot be closed.
 
 Main panel: the rendered sequence diagram
 Just above it: a label "Coverage score" with its value corresponding to the percentage (with 1 decimal) of ResultingBusinessRisks that are different from NA.
+Just below the main panel: the table detailed in Security requirements table section
 
 Under each arrow of the sequence diagram, display the 6 letters S T R I D E separated by a whitespace.
 When clicking on any of those 6 letters, open a modal.
@@ -130,9 +133,9 @@ Submodal asks for title, description, technicalDifficulty (dropdown of Difficult
 
 In this submodal, there is also the list of RequirementInstance associated to this Technical Scenario (do not display the implementation effort as it could be confusing, if technical or logistics value is NA display it in red), a "Create Security Requirement" button which opens a sub-submodal and at the bottom the resulting attack difficulty (computed as step 2 of Processing section). The Delete security requirement button deletes all the RequirementInstances which have a reference to this TechnicalScenario.
 
-This sub-submodal has 2 sections: one for the SecurityRequirement and one for the corresponding RequirementInstance.
-Section1 asks for title, description and implementation effort (dropdown of ImplementationEffort). 
-Section2 has a label "For this attack scenario" and asks for updated technical difficulty (dropdown of Difficult fields), updated logistics difficulty (dropdown of Difficult fields).
+This sub-submodal has 2 sections A and B: one for the SecurityRequirement and one for the corresponding RequirementInstance.
+Section A asks for title, description, implementation effort (dropdown of ImplementationEffort) and implementation status (dropdown of RequirementStatus)
+Section B has a label "For this attack scenario" and asks for updated technical difficulty (dropdown of Difficult fields), updated logistics difficulty (dropdown of Difficult fields).
 When closed, a SecurityRequirement is built with title, description, source as source Actor from the current Interaction, destination as destination actor from the current Interaction, implementation effort.
 A RequirementInstance is also built with secRequirement as the just built SecurityRequirement, techScenario as the current TechnicalScenario, updatedTechnicalDifficulty and updatedLogisticsDifficult from the dropdown values.
 
@@ -142,12 +145,49 @@ Closing the modal updates businessImpact and attackDifficulty of this letter for
 And then triggers a coloring results for this letter of this Interaction, calls syncing interactions and finishes by updating the coverage score.
 If businessImpact is not NA but businessRisk is NA, add a question mark below this letter.
 
+## Security requirements table
+
+A table of the SecurityRequirements with the title "Security Requirements Summary" and the following columns 
+* Title: title of SecurityRequirement + Edit button to show modal to update Title, Description, implementation effort and status (call syncing interactions when closing modal) + Delete button (make sure to also delete all the RequirementInstances referencing this SecurityRequirement, then call syncing interactions afterwards and finally coloring results)
+* Description: description of SecurityRequirement
+* Implementation Effort: implementationEffort of SecurityRequirement
+* Status: status of SecurityRequirement
+* Risk reduction: score computed with algo below passing SecurityRequirement as parameter
+* Efficiency score: efficiency computed with algo below
+
+It is possible to sort by any Column, except for Description.
+Sorting by Risk Reduction or Effiency Score is the concatenation of 2 sublists: first the sorted sublist without the items of status Implemented, and then the sorted sublist containing only the status Implemented items.
+
+Lines with status Implemented are coloured in dark grey
+
+algo: to be implemented in `risk_scoring.js`, using secRequirement as parameter
+Include tests in `test_all_risk_scores.js` to make sure differenty SecurityRequirements do not always return the same score.
+
+Initialize score to 0 each time it is called.
+Compute effortScore from the effort of secRequirement and this mapping:
+VeryLow: 1, Low: 3, Medium: 10, High: 30, VeryHigh: 100
+
+Iterate over the RequirementInstances which reference this secRequirement.
+From the corresponding technicalScenario, compute the defaultAttackDifficulty and the updatedAttackDifficulty as in the Processing section.
+Then compute defaultBusinessRisk and updatedBusinessRisk with those 2 attack difficulty and the BusinessRiskMatrix.
+
+Now increment score according to this table
+| DefaultBusinessRisk / UpdatedBusinessRisk | Low | Medium | High | Critical |
+| ----------------------------------------- | --- | ------ | ---- | -------- |
+| Low | 0 | 1 | 3 | 5 |
+| Medium | 0 | 0 | 2 | 4 |
+| High | 0 | 0 | 0 | 2 |
+| Critical | 0| 0 | 0 | 0 |
+
+Finally return score and efficiency = score/effortScore
+
 ## Syncing interactions
 
 Iterate over all the Interactions:
 1. If they have the same source and destination actors, create a RequirementInstance for each of its TechnicalScenarios with the current secRequirement (if there isn't already a RequirementInstance for this specific secRequirement). Use NA as updatedTechDifficulty and updatedLogisticsDifficulty.
 2. If there is a technicalScenario with a RequirementInstance that has a NA for updatedTechDifficulty or updateLogisticsDifficulty, add an exclamation mark below the corresponding STRIDE letter.
 
+And finally update the security requirements table.
 
 ## Coloring results
 
