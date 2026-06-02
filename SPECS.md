@@ -1,4 +1,4 @@
-Version 0.27
+Version 0.54
 
 # High level description
 
@@ -37,6 +37,12 @@ AttackDifficultySTRIDE: s as list of TechnicalScenario, t as list of TechnicalSc
 ResultingBusinessRisks: s as BusinessRisk, t as BusinessRisk, r as BusinessRisk, i as BusinessRisk, d as BusinessRisk, e as BusinessRisk
 
 Interaction: source as Actor, destination as Actor, businessImpact as BusinessImpactSTRIDE, attackDifficulty as AttackDifficultySTRIDE
+
+ImplementationEffort: VeryLow, Low, Medium, High, VeryHigh
+
+SecurityRequirement: title as String, description as String, source as Actor, destination as Actor, effort as ImplementationEffort
+
+RequirementInstance: secRequirement as SecurityRequirement, techScenario as technicalScenario, updatedTechDifficulty as Difficulty, updatedLogisticsDifficulty as Difficulty
 
 # Business logic
 
@@ -81,7 +87,12 @@ The UI section describes how the user provides those 2 lists.
 For each Interaction, a ResultingBusinessRisks is computed using the same logic for its s, t, r, i, d and e components.
 Only the algorithm for the s component is described below, for the other components just replace s by t,r,i,d or e:
 1. Iterate over the s list of businessImpact and find the highest severity. Name it maxImpact. If list is empty, return NA.
-2. Iterate over the s list of attackDifficulty, compute difficulty according to DifficultyMatrix and find the lowest difficulty. Name it minDifficulty. If list is empty, return NA.
+2. Iterate over the s list of attackDifficulty, compute attack difficulty according to algorithm below and find the lowest difficulty. Name it minDifficulty. If list is empty, return NA.
+Difficulty algorithm: 
+* Compute defaultAttackDifficulty with DifficultyMatrix from technicalDifficulty and logisiticsDifficulty of current TechnicalScenario
+* Iterate over the RequirementInstances associated to the current TechnicalScenario. If empty, return defaultAttackDifficulty.
+* Otherwise find the max updatedTechDifficulty and max updatedLogisticsDifficulty. If any of those 2 values is NA, return defaultAttackDifficulty
+Compute updatedAttackDifficulty with those 2 max values and the DifficultyMatrix. Return updatedAttackDifficulty
 3. Compute BusinessRisk from maxImpact and minDifficulty using BusinessRiskMatrix.
 4. Store it in s of ResultingBusinessRisks
 
@@ -115,13 +126,26 @@ Section 2 shows the list of TechnicalScenario, displaying its title, an Edit but
 There is a + button below the list to insert a TechnicalScenario which opens a submodal.
 Next to this button, display a small help icon and when mouse is over it, show the corresponding message "Estimate the complexity to execute such attack"
 Same icon and content is displayed next to the submodal window title. Submodal window title is "Attack scenario for " + STRIDE mapping.
-Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built.
+Submodal asks for title, description, technicalDifficulty (dropdown of Difficult fields), logisticsDifficulty (dropdown of Difficult fields). When closed, a TechnicalScenario is built and syncing interactions section is called.
+
+In this submodal, there is also the list of RequirementInstance associated to this Technical Scenario (do not display the implementation effort as it could be confusing), a "Create Security Requirement" button which opens a sub-submodal and at the bottom the resulting attack difficulty (computed as step 2 of Processing section). The Delete security requirement buttons deletes all the associated RequirementInstances and then calls the syncing interactions section.
+
+This sub-submodal asks for title, description, updated technical difficulty (dropdown of Difficult fields), updated logistics difficulty (dropdown of Difficult fields) and implementation effort (dropdown of ImplementationEffort). When closed, a SecurityRequirement is built with title, description, source as source Actor from the current Interaction, destination as destination actor from the current Interaction, implementation effort.
+A RequirementInstance is also built with secRequirement as the just built SecurityRequirement, techScenario as the current TechnicalScenario, updatedTechnicalDifficulty and updatedLogisticsDifficult from the dropdown values.
+Now do the syncing interactions section.
 
 Section 3 is a label called Resulting Risk followed by the computed BusinessRisk with the color corresponding to coloring results.
 
 Closing the modal updates businessImpact and attackDifficulty of this letter for this Interaction.
 And then triggers a coloring results for this letter of this Interaction, followed by updating the coverage score.
 If businessImpact is not NA but businessRisk is NA, add a question mark below this letter.
+
+## Syncing interactions
+
+Iterate over all the Interactions:
+1. If they have the same source and destination actors, create a RequirementInstance for each of its TechnicalScenarios with the current secRequirement (if there isn't already a RequirementInstance for this specific secRequirement). Use NA as updatedTechDifficulty and updatedLogisticsDifficulty.
+2. If there is a technicalScenario with a RequirementInstance that has a NA for updatedTechDifficulty or updateLogisticsDifficulty, add an exclamation mark below the corresponding STRIDE letter.
+
 
 ## Coloring results
 

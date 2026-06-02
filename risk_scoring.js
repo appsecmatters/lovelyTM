@@ -47,6 +47,39 @@ function combineDifficulty(tech, logistics) {
 }
 
 /**
+ * Compute the effective attack difficulty for a single TechnicalScenario,
+ * taking its RequirementInstances into account (spec v0.51 step 2).
+ *
+ * - No requirements → combineDifficulty(tech, logs) of the scenario itself.
+ * - With requirements → find max(updatedTechDifficulty) and max(updatedLogisticsDifficulty)
+ *   across all instances (using ATTACK_DIFFICULTY ordering so NA stays lowest),
+ *   then combine through DifficultyMatrix. Falls back to the default when the
+ *   combination is invalid (e.g. all-NA updates).
+ */
+function computeAttackDifficultyForScenario(scenario) {
+  const defaultDiff = combineDifficulty(scenario.technicalDifficulty, scenario.logisticsDifficulty);
+
+  const reqs = scenario.requirementInstances || [];
+  if (reqs.length === 0) return defaultDiff;
+
+  let maxTechIdx = -1;
+  let maxLogsIdx = -1;
+  for (const ri of reqs) {
+    const tIdx = ATTACK_DIFFICULTY.indexOf(ri.updatedTechDifficulty);
+    const lIdx = ATTACK_DIFFICULTY.indexOf(ri.updatedLogisticsDifficulty);
+    if (tIdx > maxTechIdx) maxTechIdx = tIdx;
+    if (lIdx > maxLogsIdx) maxLogsIdx = lIdx;
+  }
+
+  const maxTech = maxTechIdx >= 0 ? ATTACK_DIFFICULTY[maxTechIdx] : 'NA';
+  const maxLogs = maxLogsIdx >= 0 ? ATTACK_DIFFICULTY[maxLogsIdx] : 'NA';
+
+  // Spec: if either max dimension is NA (no requirement constrains it), fall back to default
+  if (maxTech === 'NA' || maxLogs === 'NA') return defaultDiff;
+  return combineDifficulty(maxTech, maxLogs);
+}
+
+/**
  * Compute the BusinessRisk for one STRIDE letter of one interaction.
  * businessScenarios  – array of BusinessScenario for this letter
  * technicalScenarios – array of TechnicalScenario for this letter
@@ -70,10 +103,10 @@ function computeRiskForLetter(businessScenarios, technicalScenarios) {
   } else {
     let minDiffIdx = DIFFICULTY.length;
     for (const t of technicalScenarios) {
-      const combined = combineDifficulty(t.technicalDifficulty, t.logisticsDifficulty);
-      if (combined !== null) {
-        const idx = DIFFICULTY.indexOf(combined);
-        if (idx < minDiffIdx) minDiffIdx = idx;
+      const attackDiff = computeAttackDifficultyForScenario(t);
+      if (attackDiff !== null) {
+        const idx = DIFFICULTY.indexOf(attackDiff);
+        if (idx >= 0 && idx < minDiffIdx) minDiffIdx = idx;
       }
     }
     minAttackDifficulty = minDiffIdx < DIFFICULTY.length ? DIFFICULTY[minDiffIdx] : 'NA';
@@ -98,6 +131,6 @@ function computeAllRisks(interaction) {
 if (typeof module !== 'undefined') {
   module.exports = {
     SEVERITY, DIFFICULTY, ATTACK_DIFFICULTY, DIFFICULTY_MATRIX, BUSINESS_RISK_MATRIX, RISK_ORDER,
-    combineDifficulty, computeRiskForLetter, computeAllRisks,
+    combineDifficulty, computeAttackDifficultyForScenario, computeRiskForLetter, computeAllRisks,
   };
 }

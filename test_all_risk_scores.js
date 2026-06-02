@@ -14,6 +14,7 @@ const {
   BUSINESS_RISK_MATRIX,
   RISK_ORDER,
   combineDifficulty,
+  computeAttackDifficultyForScenario,
   computeRiskForLetter,
 } = require('./risk_scoring');
 
@@ -177,6 +178,143 @@ assertDiff('High',        'Low',         'High');
 assertDiff('Low-Medium',  'Low',         'Low-Medium');
 assertDiff('Low-Medium',  'Low-Medium',  'Low-Medium');
 assertDiff('Medium',      'Low-Medium',  'Medium');
+
+// ── RequirementInstances: computeAttackDifficultyForScenario ─────────────────
+
+console.log('\ncomputeAttackDifficultyForScenario:');
+
+function assertScenarioDiff(scenario, expected, note) {
+  const actual = computeAttackDifficultyForScenario(scenario);
+  const ok = actual === expected;
+  console.log(`  ${note}: → ${actual}${ok ? '' : ` (expected ${expected})`}`);
+  if (!ok) failures++;
+}
+
+function mkScenario(tech, logs, reqs) {
+  return { technicalDifficulty: tech, logisticsDifficulty: logs, requirementInstances: reqs };
+}
+
+function mkReq(updatedTech, updatedLogs) {
+  return { updatedTechDifficulty: updatedTech, updatedLogisticsDifficulty: updatedLogs };
+}
+
+// No requirements → default difficulty
+assertScenarioDiff(mkScenario('Low',    'Low',    []), 'Low',         'no reqs, Low+Low');
+assertScenarioDiff(mkScenario('Medium', 'Medium', []), 'Medium-High', 'no reqs, Medium+Medium');
+assertScenarioDiff(mkScenario('High',   'High',   []), 'High',        'no reqs, High+High');
+
+// One requirement overrides
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('Medium', 'Low')]),
+  'Medium',  // DIFFICULTY_MATRIX[Medium][Low] = Medium
+  '1 req: maxTech=Medium, maxLogs=Low → Medium'
+);
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('High', 'High')]),
+  'High',    // DIFFICULTY_MATRIX[High][High] = High
+  '1 req: maxTech=High, maxLogs=High → High'
+);
+
+// Multiple requirements: max per dimension independently
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('Medium', 'Low'), mkReq('Low', 'High')]),
+  'High',    // maxTech=Medium, maxLogs=High → DIFFICULTY_MATRIX[Medium][High] = High
+  '2 reqs: maxTech=Medium maxLogs=High → High'
+);
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('Medium-High', 'Medium'), mkReq('Medium', 'Medium-High')]),
+  'High',    // maxTech=Medium-High, maxLogs=Medium-High → DIFFICULTY_MATRIX[Medium-High][Medium-High] = High
+  '2 reqs: maxTech=Medium-High maxLogs=Medium-High → High'
+);
+
+// All-NA requirements → fall back to default (spec: if either max dim is NA, use default)
+assertScenarioDiff(
+  mkScenario('High', 'High', [mkReq('NA', 'NA')]),
+  'High',    // maxTech=NA or maxLogs=NA → fallback to default High+High = High
+  'all-NA req → fallback default High+High'
+);
+assertScenarioDiff(
+  mkScenario('Low', 'Medium', [mkReq('NA', 'NA')]),
+  'Medium',  // maxTech=NA → fallback: DIFFICULTY_MATRIX[Low][Medium] = Medium
+  'all-NA req → fallback default Low+Medium'
+);
+
+// Partial NA: one dimension is NA across all reqs → still falls back
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('High', 'NA')]),
+  'Low',     // maxTech=High, maxLogs=NA → maxLogs is NA → fallback Low+Low = Low
+  '1 req NA logs → fallback default Low+Low'
+);
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('NA', 'High')]),
+  'Low',     // maxTech=NA → fallback Low+Low = Low
+  '1 req NA tech → fallback default Low+Low'
+);
+// Mix: one req has partial NA, another covers both dims → max wins, no fallback
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('High', 'NA'), mkReq('NA', 'High')]),
+  'High',    // maxTech=High (from req1), maxLogs=High (from req2) → both non-NA → High+High = High
+  '2 reqs cross-covering both dims → High+High'
+);
+
+// Mix of NA and non-NA: max picks non-NA values
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('NA', 'NA'), mkReq('Medium-High', 'Medium')]),
+  'Medium-High',  // maxTech=Medium-High, maxLogs=Medium → DIFFICULTY_MATRIX[Medium-High][Medium] = Medium-High
+  'NA + Medium-High/Medium → Medium-High'
+);
+
+// ── Integration: computeRiskForLetter with RequirementInstances ───────────────
+
+console.log('\ncomputeRiskForLetter with RequirementInstances:');
+
+function assertRiskWithReqs(biz, techScenarios, expected, note) {
+  const actual = computeRiskForLetter(biz, techScenarios);
+  const ok = actual === expected;
+  console.log(`  ${note}: → ${actual}${ok ? '' : ` (expected ${expected})`}`);
+  if (!ok) failures++;
+}
+
+// No requirements: unchanged baseline
+assertRiskWithReqs(
+  [{ businessImpact: 'High' }],
+  [mkScenario('Low', 'Low', [])],
+  'Critical',  // default Low → BUSINESS_RISK_MATRIX[High][Low] = Critical
+  'High impact, Low+Low, no reqs → Critical'
+);
+
+// Requirements raise difficulty → lower risk
+assertRiskWithReqs(
+  [{ businessImpact: 'High' }],
+  [mkScenario('Low', 'Low', [mkReq('High', 'High')])],
+  'Medium',    // updated High → BUSINESS_RISK_MATRIX[High][High] = Medium
+  'High impact, Low+Low, req→High+High → Medium'
+);
+assertRiskWithReqs(
+  [{ businessImpact: 'Medium' }],
+  [mkScenario('Low', 'Low', [mkReq('Medium-High', 'Medium')])],
+  'Low',       // updated Medium-High → BUSINESS_RISK_MATRIX[Medium][Medium-High] = Low
+  'Medium impact, req→Medium-High/Medium → Low'
+);
+
+// Multiple scenarios: min across scenarios (easiest attack path wins)
+assertRiskWithReqs(
+  [{ businessImpact: 'High' }],
+  [
+    mkScenario('Low', 'Low', [mkReq('High', 'High')]),  // updated → High
+    mkScenario('Low', 'Low', []),                        // default → Low (easier)
+  ],
+  'Critical',  // min difficulty = Low → Critical
+  'High impact, 2 scenarios: one mitigated (High), one bare (Low) → Critical'
+);
+
+// All-NA requirements: baseline preserved
+assertRiskWithReqs(
+  [{ businessImpact: 'High' }],
+  [mkScenario('Low', 'Low', [mkReq('NA', 'NA')])],
+  'Critical',  // fallback to Low → Critical
+  'High impact, all-NA req → fallback Low → Critical'
+);
 
 // ── Result ─────────────────────────────────────────────────────────────────────
 

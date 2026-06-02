@@ -3,3 +3,5 @@ sequenceDiagram
     Client1->>Server1: POST /doSomething
     Server1->>DB1: Store
     Server1->>Client1: Success
+    Client1->>Server1: POST /doSomethingElse
+    

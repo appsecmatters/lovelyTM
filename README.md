@@ -9,8 +9,7 @@ TODO explain how to play with security requirements priorities
 
 ## Not implemented yet
 
-* Counter measures (to be replaced by Security Requirements)
-CounterMeasure: title as String, description as String, technicalScenarios as list of technicalScenario, technicalDifficulty as Difficulty, logisticsDifficulty as Difficulty
+* Most useful security requirement: to reduce overall risk, best effort vs risk reduction
 
 * Reusing scenarios for different interactions/stride letters (to be detailed for same source/destination)
 
@@ -31,3 +30,9 @@ CounterMeasure: title as String, description as String, technicalScenarios as li
 * Version 0.25: it took 3 minutes. Online help for business impact and attack scenarios + risk scoring tables
 * Version 0.26: it took 1 minute. More acurate submodal titles
 * Version 0.27: it took 2 minutes. Completion score
+* Version 0.50: it took 6 minutes. Security requirements 1st draft
+* Version 0.51: it took 3 minutes. Attack difficulty algorithm with security requirements
+* Version 0.52: it took 6 minutes (server error 1st time after 3.5 minutes). Improve display of security requirements, auto create RequirementInstances for similar interactions
+* Version 0.53: it took 2 minutes. Auto create requirement instances better syncing
+* Version 0.54: it took x minutes (server error 3 times after 3.5 minutes). Display exclamation mark for RequirementInstances to be completed (NA values)
+
