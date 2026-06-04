@@ -338,7 +338,14 @@ function updateMessageTextColor(interactionIndex) {
   const el = msgTexts[interactionIndex];
   if (!el) return;
 
-  const color = RISK_COLORS[getInteractionMaxRisk(interactions[interactionIndex])];
+  const interaction = interactions[interactionIndex];
+  const hasQuestionMark = STRIDE_LETTERS.some(l => needsQuestionMark(interaction, l));
+  if (hasQuestionMark) {
+    el.style.fill = '';
+    return;
+  }
+
+  const color = RISK_COLORS[getInteractionMaxRisk(interaction)];
   el.style.fill = color ?? '';   // null (NA) → clear → browser default (black)
 }
 
@@ -1034,25 +1041,21 @@ const app = {
   deleteRequirement(index) {
     const interaction  = interactions[modalCtx.interactionIndex];
     const techScenario = interaction.attackDifficulty[modalCtx.letter][modalCtx.editIndex];
-    const originTs     = techScenario.requirementInstances[index].techScenario;
+    const secReq       = techScenario.requirementInstances[index].secRequirement;
 
-    if (originTs) {
-      // Delete every RequirementInstance whose techScenario back-ref points to the
-      // TechnicalScenario of the current modal (covers primary + propagated placeholders)
-      for (const ia of interactions) {
-        for (const l of STRIDE_LETTERS) {
-          for (const ts of ia.attackDifficulty[l]) {
-            for (let i = ts.requirementInstances.length - 1; i >= 0; i--) {
-              if (ts.requirementInstances[i].techScenario === originTs) {
-                ts.requirementInstances.splice(i, 1);
-              }
+    // secRequirement objects are unique by creation (live) or by deduplication on import (v0.66),
+    // so identity is always the correct key — covers origin instances, propagated placeholders,
+    // and imported instances regardless of whether the techScenario back-ref is present.
+    for (const ia of interactions) {
+      for (const l of STRIDE_LETTERS) {
+        for (const ts of ia.attackDifficulty[l]) {
+          for (let i = ts.requirementInstances.length - 1; i >= 0; i--) {
+            if (ts.requirementInstances[i].secRequirement === secReq) {
+              ts.requirementInstances.splice(i, 1);
             }
           }
         }
       }
-    } else {
-      // Fallback for imported data where the back-ref was stripped during export
-      techScenario.requirementInstances.splice(index, 1);
     }
 
     renderStrideModalContent();
@@ -1065,8 +1068,15 @@ window.app = app;
 // ============================================================
 
 function exportData(filename) {
-  // 'techScenario' is a transient back-reference (circular); strip it from the export
-  const replacer = (key, value) => key === 'techScenario' ? undefined : value;
+  // 'techScenario' is a transient back-reference (circular); strip it.
+  // RequirementInstances with NA difficulties are placeholders — omit them too.
+  const replacer = (key, value) => {
+    if (key === 'techScenario') return undefined;
+    if (key === 'requirementInstances' && Array.isArray(value)) {
+      return value.filter(ri => ri.updatedTechDifficulty !== 'NA' && ri.updatedLogisticsDifficulty !== 'NA');
+    }
+    return value;
+  };
   const payload = JSON.stringify({ sequenceDiagram: diagramMarkdown, interactions }, replacer, 2);
   const blob    = new Blob([payload], { type: 'application/json' });
   const url     = URL.createObjectURL(blob);
@@ -1324,6 +1334,28 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       }
+
+      // Deduplicate: secRequirements with the same title+source+destination share one object,
+      // so identity checks (seen.has, ri.secRequirement === secReq) work correctly after import.
+      const reqMap = new Map();
+      for (const ia of interactions) {
+        for (const l of STRIDE_LETTERS) {
+          for (const ts of ia.attackDifficulty[l]) {
+            for (const ri of ts.requirementInstances) {
+              const key = `${ri.secRequirement.title}||${ri.secRequirement.source}||${ri.secRequirement.destination}`;
+              if (!reqMap.has(key)) {
+                reqMap.set(key, ri.secRequirement);
+              } else {
+                ri.secRequirement = reqMap.get(key);
+              }
+            }
+          }
+        }
+      }
+
+      // Re-propagate each secRequirement to all matching TechnicalScenarios
+      // (placeholder instances were stripped on export).
+      for (let i = 0; i < interactions.length; i++) syncAllForInteraction(i);
 
       displaySvg(svg);
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));

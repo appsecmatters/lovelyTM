@@ -266,6 +266,18 @@ assertScenarioDiff(
   'NA + Medium-High/Medium → Medium-High'
 );
 
+// Requirements cannot lower attack difficulty below the scenario default
+assertScenarioDiff(
+  mkScenario('High', 'High', [mkReq('Low', 'Low')]),
+  'High',         // updated Low+Low=Low < default High+High=High → clamped to High
+  'req below default (Low<High) → clamped to default High'
+);
+assertScenarioDiff(
+  mkScenario('Medium', 'Medium', [mkReq('Low', 'Low')]),
+  'Medium-High',  // updated Low+Low=Low < default Medium+Medium=Medium-High → clamped
+  'req below default (Low<Medium-High) → clamped to default Medium-High'
+);
+
 // ── Integration: computeRiskForLetter with RequirementInstances ───────────────
 
 console.log('\ncomputeRiskForLetter with RequirementInstances:');
@@ -381,6 +393,14 @@ assertReqScore(
   'same difficulty → score 0',
   srBase,
   [mkReqInteraction('A', 'B', 'High', ['Low', 'Low'], ['Low', 'Low'], srBase)],
+  0
+);
+
+// Updated difficulty below default → clamped to default → same risk → 0
+assertReqScore(
+  'req below default (Low<High+High) → clamped → score 0',
+  srBase,
+  [mkReqInteraction('A', 'B', 'High', ['High', 'High'], ['Low', 'Low'], srBase)],
   0
 );
 

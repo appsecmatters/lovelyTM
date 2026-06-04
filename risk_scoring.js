@@ -99,7 +99,11 @@ function computeAttackDifficultyForScenario(scenario) {
 
   // Spec: if either max dimension is NA (no requirement constrains it), fall back to default
   if (maxTech === 'NA' || maxLogs === 'NA') return defaultDiff;
-  return combineDifficulty(maxTech, maxLogs);
+  const updatedDiff = combineDifficulty(maxTech, maxLogs);
+  // Requirements can only raise attack difficulty, never lower it.
+  const dIdx = DIFFICULTY.indexOf(defaultDiff);
+  const uIdx = DIFFICULTY.indexOf(updatedDiff);
+  return uIdx >= dIdx ? updatedDiff : defaultDiff;
 }
 
 /**
@@ -179,8 +183,12 @@ function computeRequirementScores(secReq, interactions) {
 
           const defaultDiff = combineDifficulty(ts.technicalDifficulty, ts.logisticsDifficulty);
           // Use this instance's own updated difficulties so each requirement scores independently
-          const updatedDiff = combineDifficulty(ri.updatedTechDifficulty, ri.updatedLogisticsDifficulty);
-          if (defaultDiff === null || updatedDiff === null) continue;
+          const rawUpdatedDiff = combineDifficulty(ri.updatedTechDifficulty, ri.updatedLogisticsDifficulty);
+          if (defaultDiff === null || rawUpdatedDiff === null) continue;
+          // Requirements can only raise attack difficulty, never lower it.
+          const dClampIdx = DIFFICULTY.indexOf(defaultDiff);
+          const uClampIdx = DIFFICULTY.indexOf(rawUpdatedDiff);
+          const updatedDiff = uClampIdx >= dClampIdx ? rawUpdatedDiff : defaultDiff;
 
           const defaultDiffIdx = ATTACK_DIFFICULTY.indexOf(defaultDiff);
           const updatedDiffIdx = ATTACK_DIFFICULTY.indexOf(updatedDiff);

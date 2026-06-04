@@ -1,4 +1,4 @@
-Version 0.64
+Version 0.68
 
 # High level description
 
@@ -94,7 +94,7 @@ Difficulty algorithm:
 * Compute defaultAttackDifficulty with DifficultyMatrix from technicalDifficulty and logisiticsDifficulty of current TechnicalScenario
 * Iterate over the RequirementInstances associated to the current TechnicalScenario. If empty, return defaultAttackDifficulty.
 * Otherwise find the max updatedTechDifficulty and max updatedLogisticsDifficulty. If any of those 2 values is NA, return defaultAttackDifficulty
-Compute updatedAttackDifficulty with those 2 max values and the DifficultyMatrix. Return updatedAttackDifficulty
+Compute updatedAttackDifficulty with those 2 max values and the DifficultyMatrix. Return maximum of updatedAttackDifficulty and defaultAttackDifficulty
 3. Compute BusinessRisk from maxImpact and minDifficulty using BusinessRiskMatrix.
 4. Store it in s of ResultingBusinessRisks
 
@@ -104,7 +104,7 @@ First line:
 * a button "Import sequence diagram" that opens a modal where the user pastes the Markdown of a sequence diagram.
 When the modal is closed, the markdown is rendered in the main panel.
 If there is a syntax error, the modal cannot be closed.
-* a button "Import existing JSON" which open a previously exporting JSON. It loads the markdown from the `sequenceDiagram` field and instatiates the Interaction objects from the `interactions` field
+* a button "Import existing JSON" which open a previously exporting JSON. It loads the markdown from the `sequenceDiagram` field and instatiates the Interaction objects from the `interactions` field. `secRequirement` with the same title, source and destination are built as a unique SecurityRequirement object. Finally it executes syncing interactions
 * a button "Export" which opens a modal asking for filename and then triggers the workflow described in the Persistence section
 * a button "Crash Course" which opens a modal with a HTML view of `crash_course.md`. HTML new lines should match the empty lines of md file. Include online help
 * a button "Risk scoring" which opens a modal with a HTML view of the 2 tables BusinessRiskMatrix and DifficultyMatrix
@@ -200,7 +200,7 @@ Change the color of the letter depending on the BusinessRisk value computed:
 * High: red
 * Critical: purple
 
-Update the color of the text above the corresponding arrow by using the color of the highest business risk letter.
+Update the color of the text above the corresponding arrow by using the color of the highest business risk letter, except if there are question marks.
 
 ## Stylesheet
 
@@ -215,7 +215,7 @@ display a small help icon and when mouse is over it, show the corresponding defi
 
 Build a JSON with:
 * the sequence diagram markdown as String in a sequenceDiagram field
-* the list of Interaction objects and a full copy of their members as described in the Data model section.
+* the list of Interaction objects and a full copy of their members as described in the Data model section. Do not include `secRequirement` if either updatedTechDifficulty or updatedLogisticsDifficulty is NA
 
 Generate from this JSON a file called {filename}.json and have the browser download it.
 

@@ -1,0 +1,574 @@
+{
+  "sequenceDiagram": "sequenceDiagram\n    Customer1->>MobileApp: Give n loyalty points to Customer2\n    MobileApp->>Server: HTTP POST /givePoints(Customer2,n)\n    Server->>DB: Update availablePoints for Customer1 and Customer2\n    Server->>MobileApp: Send notification to Customer2\n    MobileApp->>Customer2: Display n points given by Customer1",
+  "interactions": [
+    {
+      "source": "Customer1",
+      "destination": "MobileApp",
+      "label": "Give n loyalty points to Customer2",
+      "businessImpact": {
+        "s": [
+          {
+            "title": "Customer2 pretends to be Customer1",
+            "description": "Loyalty points from many customers can be transferred to Customer1",
+            "businessImpact": "High"
+          }
+        ],
+        "t": [
+          {
+            "title": "Target customer modified",
+            "description": "Points get received by attacker rather than Customer2",
+            "businessImpact": "High"
+          }
+        ],
+        "r": [
+          {
+            "title": "Customer1 pretends he did not send the points",
+            "description": "Customer1 asks to get back his points but in the mean time Customer2 has already spent them",
+            "businessImpact": "Medium"
+          }
+        ],
+        "i": [
+          {
+            "title": "Number of given points is exposed",
+            "description": "Not really personal data",
+            "businessImpact": "Low"
+          }
+        ],
+        "d": [
+          {
+            "title": "Enter a huge number of points to make the application slow",
+            "description": "It only impacts the smartphone of Customer1",
+            "businessImpact": "Low"
+          }
+        ],
+        "e": [
+          {
+            "title": "NA",
+            "description": "There isn't any privileged role",
+            "businessImpact": "None"
+          }
+        ]
+      },
+      "attackDifficulty": {
+        "s": [
+          {
+            "title": "Bruteforce Customer2 password",
+            "description": "",
+            "technicalDifficulty": "Low",
+            "logisticsDifficulty": "Medium-High",
+            "requirementInstances": []
+          }
+        ],
+        "t": [
+          {
+            "title": "Malware in Customer1 smartphone",
+            "description": "Changing data on the fly",
+            "technicalDifficulty": "Medium",
+            "logisticsDifficulty": "High",
+            "requirementInstances": []
+          }
+        ],
+        "r": [
+          {
+            "title": "Customer1 is also Customer2",
+            "description": "Pretending there was a UI bug and the action was never requested",
+            "technicalDifficulty": "Low",
+            "logisticsDifficulty": "Low-Medium",
+            "requirementInstances": []
+          }
+        ],
+        "i": [],
+        "d": [],
+        "e": []
+      },
+      "risks": {
+        "s": "Medium",
+        "t": "Medium",
+        "r": "Medium",
+        "i": "Low",
+        "d": "Low",
+        "e": "None"
+      }
+    },
+    {
+      "source": "MobileApp",
+      "destination": "Server",
+      "label": "POST /givePoints(Customer2,n)",
+      "businessImpact": {
+        "s": [
+          {
+            "title": "Identity of Customer1 replaced by Customer3",
+            "description": "Points get stolen from another customer",
+            "businessImpact": "High"
+          }
+        ],
+        "t": [
+          {
+            "title": "Number of points is changed to a negative value",
+            "description": "",
+            "businessImpact": "High"
+          }
+        ],
+        "r": [
+          {
+            "title": "NA",
+            "description": "Not a human actor",
+            "businessImpact": "None"
+          }
+        ],
+        "i": [
+          {
+            "title": "Customer2 id is exposed",
+            "description": "Not really personal data",
+            "businessImpact": "Low"
+          }
+        ],
+        "d": [
+          {
+            "title": "Competitor spams Server",
+            "description": "Feature used to overload the Server",
+            "businessImpact": "Medium"
+          }
+        ],
+        "e": [
+          {
+            "title": "NA",
+            "description": "There isn't any privileged role",
+            "businessImpact": "None"
+          }
+        ]
+      },
+      "attackDifficulty": {
+        "s": [
+          {
+            "title": "Call API as Customer1",
+            "description": "Without being Customer1, just by providing its id",
+            "technicalDifficulty": "Low-Medium",
+            "logisticsDifficulty": "Low",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "JWT token",
+                  "description": "Use Customer1 identity provided in a signed JWT token",
+                  "source": "MobileApp",
+                  "destination": "Server",
+                  "effort": "Low",
+                  "status": "Planned"
+                },
+                "updatedTechDifficulty": "Medium-High",
+                "updatedLogisticsDifficulty": "Low-Medium"
+              },
+              {
+                "secRequirement": {
+                  "title": "No negative points",
+                  "description": "Server refuses to process requests with a negative number of points",
+                  "source": "MobileApp",
+                  "destination": "Server",
+                  "effort": "VeryLow",
+                  "status": "Planned"
+                },
+                "updatedTechDifficulty": "Low",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ],
+        "t": [
+          {
+            "title": "Customer1 has a HTTP proxy",
+            "description": "And changes on the fly the number of points",
+            "technicalDifficulty": "Low-Medium",
+            "logisticsDifficulty": "Low-Medium",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "No negative points",
+                  "description": "Server refuses to process requests with a negative number of points",
+                  "source": "MobileApp",
+                  "destination": "Server",
+                  "effort": "VeryLow",
+                  "status": "Planned"
+                },
+                "updatedTechDifficulty": "Medium-High",
+                "updatedLogisticsDifficulty": "Low-Medium"
+              },
+              {
+                "secRequirement": {
+                  "title": "JWT token",
+                  "description": "Use Customer1 identity provided in a signed JWT token",
+                  "source": "MobileApp",
+                  "destination": "Server",
+                  "effort": "Low",
+                  "status": "Planned"
+                },
+                "updatedTechDifficulty": "Low",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ],
+        "r": [],
+        "i": [],
+        "d": [
+          {
+            "title": "Spam the POST endpoint",
+            "description": "And keep moving points between Customer1 and Customer2",
+            "technicalDifficulty": "Low",
+            "logisticsDifficulty": "Low-Medium",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "JWT token",
+                  "description": "Use Customer1 identity provided in a signed JWT token",
+                  "source": "MobileApp",
+                  "destination": "Server",
+                  "effort": "Low",
+                  "status": "Planned"
+                },
+                "updatedTechDifficulty": "Low",
+                "updatedLogisticsDifficulty": "Low"
+              },
+              {
+                "secRequirement": {
+                  "title": "No negative points",
+                  "description": "Server refuses to process requests with a negative number of points",
+                  "source": "MobileApp",
+                  "destination": "Server",
+                  "effort": "VeryLow",
+                  "status": "Planned"
+                },
+                "updatedTechDifficulty": "Low",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ],
+        "e": []
+      },
+      "risks": {
+        "s": "Medium",
+        "t": "Medium",
+        "r": "None",
+        "i": "Low",
+        "d": "Medium",
+        "e": "None"
+      }
+    },
+    {
+      "source": "Server",
+      "destination": "DB",
+      "label": "Update availablePoints for Customer1 and Customer2",
+      "businessImpact": {
+        "s": [
+          {
+            "title": "Attacker can connect to the DB as Server",
+            "description": "",
+            "businessImpact": "High"
+          }
+        ],
+        "t": [
+          {
+            "title": "Attacker changes DB content",
+            "description": "",
+            "businessImpact": "High"
+          }
+        ],
+        "r": [
+          {
+            "title": "NA",
+            "description": "Not a human actor",
+            "businessImpact": "None"
+          }
+        ],
+        "i": [
+          {
+            "title": "Attacker leaks DB content",
+            "description": "",
+            "businessImpact": "High"
+          }
+        ],
+        "d": [
+          {
+            "title": "Database spammed",
+            "description": "Sending very slow queries",
+            "businessImpact": "Medium"
+          }
+        ],
+        "e": [
+          {
+            "title": "Become DB admin",
+            "description": "Access to other tables/databases",
+            "businessImpact": "High"
+          }
+        ]
+      },
+      "attackDifficulty": {
+        "s": [
+          {
+            "title": "Credentials brute forced",
+            "description": "",
+            "technicalDifficulty": "Low",
+            "logisticsDifficulty": "Medium-High",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "Use an ORM",
+                  "description": "",
+                  "source": "Server",
+                  "destination": "DB",
+                  "effort": "Low",
+                  "status": "Backlog"
+                },
+                "updatedTechDifficulty": "Low",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ],
+        "t": [
+          {
+            "title": "Attacker has access to server",
+            "description": "Using a deserialization vulnerability in an unpatched dependency",
+            "technicalDifficulty": "Medium-High",
+            "logisticsDifficulty": "Low-Medium",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "Use an ORM",
+                  "description": "",
+                  "source": "Server",
+                  "destination": "DB",
+                  "effort": "Low",
+                  "status": "Backlog"
+                },
+                "updatedTechDifficulty": "Medium",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ],
+        "r": [],
+        "i": [
+          {
+            "title": "SQL injection",
+            "description": "Endpoint does not use parametrized queries",
+            "technicalDifficulty": "Medium",
+            "logisticsDifficulty": "Low",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "Use an ORM",
+                  "description": "",
+                  "source": "Server",
+                  "destination": "DB",
+                  "effort": "Low",
+                  "status": "Backlog"
+                },
+                "updatedTechDifficulty": "High",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ],
+        "d": [
+          {
+            "title": "Spam the POST endoint",
+            "description": "And keep moving points between Customer1 and Customer2",
+            "technicalDifficulty": "Low",
+            "logisticsDifficulty": "Low-Medium",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "Use an ORM",
+                  "description": "",
+                  "source": "Server",
+                  "destination": "DB",
+                  "effort": "Low",
+                  "status": "Backlog"
+                },
+                "updatedTechDifficulty": "Low",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ],
+        "e": [
+          {
+            "title": "Vulnerability in DB engine",
+            "description": "Unpatched DB with a known exploit.\nDifficult to run arbitrary SQL queries",
+            "technicalDifficulty": "Medium-High",
+            "logisticsDifficulty": "Medium-High",
+            "requirementInstances": [
+              {
+                "secRequirement": {
+                  "title": "Use an ORM",
+                  "description": "",
+                  "source": "Server",
+                  "destination": "DB",
+                  "effort": "Low",
+                  "status": "Backlog"
+                },
+                "updatedTechDifficulty": "Medium",
+                "updatedLogisticsDifficulty": "Low"
+              }
+            ]
+          }
+        ]
+      },
+      "risks": {
+        "s": "Medium",
+        "t": "Medium",
+        "r": "None",
+        "i": "Medium",
+        "d": "Medium",
+        "e": "Medium"
+      }
+    },
+    {
+      "source": "Server",
+      "destination": "MobileApp",
+      "label": "Send notification to Customer2",
+      "businessImpact": {
+        "s": [
+          {
+            "title": "Pretending to be the server",
+            "description": "Phishing to trick Customer1 into doing a \"safe\" transfer of his remaining points",
+            "businessImpact": "Medium"
+          }
+        ],
+        "t": [
+          {
+            "title": "Number of points changed",
+            "description": "Make believe Customer2 that Customer1 has given him more points",
+            "businessImpact": "Low"
+          }
+        ],
+        "r": [
+          {
+            "title": "NA",
+            "description": "Not a human actor",
+            "businessImpact": "None"
+          }
+        ],
+        "i": [
+          {
+            "title": "Number of given points leaking",
+            "description": "Not really personal data",
+            "businessImpact": "Low"
+          }
+        ],
+        "d": [
+          {
+            "title": "Make mobile app unusable",
+            "description": "",
+            "businessImpact": "Medium"
+          }
+        ],
+        "e": [
+          {
+            "title": "NA",
+            "description": "There isn't any privileged role",
+            "businessImpact": "None"
+          }
+        ]
+      },
+      "attackDifficulty": {
+        "s": [
+          {
+            "title": "Steal credentials of push network",
+            "description": "",
+            "technicalDifficulty": "Low-Medium",
+            "logisticsDifficulty": "Medium-High",
+            "requirementInstances": []
+          }
+        ],
+        "t": [],
+        "r": [],
+        "i": [],
+        "d": [
+          {
+            "title": "Give 0 points to Customer2",
+            "description": "And keep calling the POST endpoint",
+            "technicalDifficulty": "Low",
+            "logisticsDifficulty": "Low-Medium",
+            "requirementInstances": []
+          }
+        ],
+        "e": []
+      },
+      "risks": {
+        "s": "Low",
+        "t": "Low",
+        "r": "None",
+        "i": "Low",
+        "d": "Medium",
+        "e": "None"
+      }
+    },
+    {
+      "source": "MobileApp",
+      "destination": "Customer1",
+      "label": "Display n points given by Customer1",
+      "businessImpact": {
+        "s": [
+          {
+            "title": "NA",
+            "description": "It would mean Customer2 has installed the wrong MobileApp",
+            "businessImpact": "None"
+          }
+        ],
+        "t": [
+          {
+            "title": "Display a different number of points",
+            "description": "Customer2 would be disappointed if he cannot spend them",
+            "businessImpact": "Low"
+          }
+        ],
+        "r": [
+          {
+            "title": "NA",
+            "description": "Not a human actor",
+            "businessImpact": "None"
+          }
+        ],
+        "i": [
+          {
+            "title": "Number of points leaking",
+            "description": "Not really personal data",
+            "businessImpact": "Low"
+          }
+        ],
+        "d": [
+          {
+            "title": "NA",
+            "description": "Human actor is resilient",
+            "businessImpact": "None"
+          }
+        ],
+        "e": [
+          {
+            "title": "NA",
+            "description": "Does not apply for a human actor",
+            "businessImpact": "None"
+          }
+        ]
+      },
+      "attackDifficulty": {
+        "s": [],
+        "t": [],
+        "r": [],
+        "i": [],
+        "d": [],
+        "e": []
+      },
+      "risks": {
+        "s": "None",
+        "t": "Low",
+        "r": "None",
+        "i": "Low",
+        "d": "None",
+        "e": "None"
+      }
+    }
+  ]
+}

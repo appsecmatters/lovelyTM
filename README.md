@@ -11,7 +11,8 @@ TODO provide a really nice example (loyalty card give points)
 
 ## Not implemented yet
 
-* Show Security Requirement by showing a circle of the defaultBusinessRisk color below the STRIDE letters
+* Show Security Requirement impact by displaying a circle of the defaultBusinessRisk color below the STRIDE letters
+ (and remove filtering out Implemented + move edit/delete icons to a specific column, description needed?)
 
 * Reusing scenarios for different interactions/stride letters (to be detailed for same source/destination)
 
@@ -44,4 +45,7 @@ TODO provide a really nice example (loyalty card give points)
 * Version 0.62: it took 6 minues. Fix risk reduction scoring
 * Version 0.63: it took 3 minutes. Fix bugs scoring + screen refresh when deleting security requirements
 * Version 0.64: it took 4 minutes. Clarify risk reduction scoring should yield different results + tests
-
+* Version 0.65: it took 1 minute. Do not colour text when there are question marks.
+* Version 0.66: it took 2 minutes. Build unique security requirements when importing from JSON. Do not export in JSON security requirements with NA value
+* Version 0.67: it took 2 minutes. After importing from JSON, deleting security requirement from the attack scenario does not work.
+* Version 0.68: it took 2 minutes. Security requirements should never lower attack difficulty.
