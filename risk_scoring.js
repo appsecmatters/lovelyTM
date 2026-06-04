@@ -82,7 +82,8 @@ function combineDifficulty(tech, logistics) {
 function computeAttackDifficultyForScenario(scenario) {
   const defaultDiff = combineDifficulty(scenario.technicalDifficulty, scenario.logisticsDifficulty);
 
-  const reqs = scenario.requirementInstances || [];
+  // Ignore RequirementInstances whose SecurityRequirement is inactive (active === false)
+  const reqs = (scenario.requirementInstances || []).filter(ri => ri.secRequirement.active !== false);
   if (reqs.length === 0) return defaultDiff;
 
   let maxTechIdx = -1;

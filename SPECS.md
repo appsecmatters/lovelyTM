@@ -1,4 +1,4 @@
-Version 0.68
+Version 0.70
 
 # High level description
 
@@ -42,7 +42,7 @@ ImplementationEffort: VeryLow, Low, Medium, High, VeryHigh
 
 RequirementStatus: Enum (ordered) with values NA, Backlog, Planned, Implemented
 
-SecurityRequirement: title as String, description as String, source as Actor, destination as Actor, effort as ImplementationEffort, status as RequirementStatus
+SecurityRequirement: title as String, description as String, source as Actor, destination as Actor, effort as ImplementationEffort, status as RequirementStatus, active as Boolean (default True)
 
 RequirementInstance: secRequirement as SecurityRequirement, techScenario as TechnicalScenario, updatedTechDifficulty as Difficulty, updatedLogisticsDifficulty as Difficulty
 
@@ -90,9 +90,10 @@ For each Interaction, a ResultingBusinessRisks is computed using the same logic 
 Only the algorithm for the s component is described below, for the other components just replace s by t,r,i,d or e:
 1. Iterate over the s list of businessImpact and find the highest severity. Name it maxImpact. If list is empty, return NA.
 2. Iterate over the s list of attackDifficulty, compute attack difficulty according to algorithm below and find the lowest difficulty. Name it minDifficulty. If list is empty, return NA.
+
 Difficulty algorithm: 
 * Compute defaultAttackDifficulty with DifficultyMatrix from technicalDifficulty and logisiticsDifficulty of current TechnicalScenario
-* Iterate over the RequirementInstances associated to the current TechnicalScenario. If empty, return defaultAttackDifficulty.
+* Iterate over the RequirementInstances associated to the current TechnicalScenario. Ignore those for which the corresponding SecurityRequirement active flag is False. If empty, return defaultAttackDifficulty.
 * Otherwise find the max updatedTechDifficulty and max updatedLogisticsDifficulty. If any of those 2 values is NA, return defaultAttackDifficulty
 Compute updatedAttackDifficulty with those 2 max values and the DifficultyMatrix. Return maximum of updatedAttackDifficulty and defaultAttackDifficulty
 3. Compute BusinessRisk from maxImpact and minDifficulty using BusinessRiskMatrix.
@@ -148,7 +149,7 @@ If businessImpact is not NA but businessRisk is NA, add a question mark below th
 ## Security requirements table
 
 A table of the SecurityRequirements with the title "Security Requirements Summary" and the following columns 
-* Title: title of SecurityRequirement + Edit button to show modal to update Title, Description, implementation effort and status (call syncing interactions when closing modal) + Delete button (make sure to also delete all the RequirementInstances referencing this SecurityRequirement, then call syncing interactions afterwards and finally coloring results)
+* Title: title of SecurityRequirement + Edit button to show modal to update Title, Description, implementation effort and status (call syncing interactions when closing modal) + Delete button (make sure to also delete all the RequirementInstances referencing this SecurityRequirement, then call syncing interactions afterwards and finally coloring results) + Toggle button to switch to True or False the active flag
 * Description: description of SecurityRequirement
 * Implementation Effort: implementationEffort of SecurityRequirement
 * Status: status of SecurityRequirement

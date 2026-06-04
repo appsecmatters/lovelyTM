@@ -471,6 +471,10 @@ function buildSecReqTableHtml() {
                   onclick="app.editSecReq(${idx})" title="Edit">✏️</button>
           <button class="btn btn-sm btn-outline-danger py-0"
                   onclick="app.deleteSecReq(${idx})" title="Delete">🗑</button>
+          <button class="btn btn-sm py-0 ${req.active !== false ? 'btn-success' : 'btn-outline-secondary'}"
+                  onclick="app.toggleSecReq(${idx})"
+                  title="${req.active !== false ? 'Active — click to deactivate' : 'Inactive — click to activate'}"
+                  >${req.active !== false ? 'ON' : 'OFF'}</button>
         </div>
       </td>
       <td>${escapeHtml(req.description || '')}</td>
@@ -938,6 +942,7 @@ function saveRequirement() {
         destination:  interaction.destination,
         effort:       document.getElementById('reqEffort').value,
         status:       document.getElementById('reqStatus').value,
+        active:       true,
       },
       techScenario,                                              // back-ref; excluded from JSON export
       updatedTechDifficulty:      document.getElementById('reqTechDiff').value,
@@ -1012,6 +1017,18 @@ const app = {
       }
     }
     // Coloring results: recompute risks and refresh all visuals
+    interactions.forEach((ia, i) => {
+      ia.risks = computeAllRisks(ia);
+      updateMessageTextColor(i);
+    });
+    interactions.forEach((_, i) => refreshAnnotationColors(i));
+    updateCoverageScore();
+    updateSecReqTable();
+  },
+  toggleSecReq(idx) {
+    const secReq = _currentSecReqs[idx];
+    if (!secReq) return;
+    secReq.active = secReq.active === false ? true : false;
     interactions.forEach((ia, i) => {
       ia.risks = computeAllRisks(ia);
       updateMessageTextColor(i);
@@ -1344,6 +1361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const ri of ts.requirementInstances) {
               const key = `${ri.secRequirement.title}||${ri.secRequirement.source}||${ri.secRequirement.destination}`;
               if (!reqMap.has(key)) {
+                if (ri.secRequirement.active === undefined) ri.secRequirement.active = true;
                 reqMap.set(key, ri.secRequirement);
               } else {
                 ri.secRequirement = reqMap.get(key);

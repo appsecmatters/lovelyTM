@@ -49,3 +49,4 @@ TODO provide a really nice example (loyalty card give points)
 * Version 0.66: it took 2 minutes. Build unique security requirements when importing from JSON. Do not export in JSON security requirements with NA value
 * Version 0.67: it took 2 minutes. After importing from JSON, deleting security requirement from the attack scenario does not work.
 * Version 0.68: it took 2 minutes. Security requirements should never lower attack difficulty.
+* Version 0.70: it took 3 minutes. Simulate requirements on and off

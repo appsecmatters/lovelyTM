@@ -196,8 +196,8 @@ function mkScenario(tech, logs, reqs) {
   return { technicalDifficulty: tech, logisticsDifficulty: logs, requirementInstances: reqs };
 }
 
-function mkReq(updatedTech, updatedLogs) {
-  return { updatedTechDifficulty: updatedTech, updatedLogisticsDifficulty: updatedLogs };
+function mkReq(updatedTech, updatedLogs, active = true) {
+  return { secRequirement: { active }, updatedTechDifficulty: updatedTech, updatedLogisticsDifficulty: updatedLogs };
 }
 
 // No requirements → default difficulty
@@ -264,6 +264,18 @@ assertScenarioDiff(
   mkScenario('Low', 'Low', [mkReq('NA', 'NA'), mkReq('Medium-High', 'Medium')]),
   'Medium-High',  // maxTech=Medium-High, maxLogs=Medium → DIFFICULTY_MATRIX[Medium-High][Medium] = Medium-High
   'NA + Medium-High/Medium → Medium-High'
+);
+
+// Inactive requirement is ignored → falls back to default
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('High', 'High', false)]),
+  'Low',   // inactive → treated as no requirements → default Low+Low = Low
+  'inactive req → ignored → default Low+Low'
+);
+assertScenarioDiff(
+  mkScenario('Low', 'Low', [mkReq('High', 'High', false), mkReq('Medium', 'Medium')]),
+  'Medium-High',  // only active req counts: Medium+Medium = Medium-High
+  'one inactive + one active req → active only Medium+Medium'
 );
 
 // Requirements cannot lower attack difficulty below the scenario default

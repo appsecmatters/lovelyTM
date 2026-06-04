@@ -153,7 +153,8 @@
                   "source": "MobileApp",
                   "destination": "Server",
                   "effort": "Low",
-                  "status": "Planned"
+                  "status": "Planned",
+                  "active": true
                 },
                 "updatedTechDifficulty": "Medium-High",
                 "updatedLogisticsDifficulty": "Low-Medium"
@@ -165,7 +166,8 @@
                   "source": "MobileApp",
                   "destination": "Server",
                   "effort": "VeryLow",
-                  "status": "Planned"
+                  "status": "Planned",
+                  "active": false
                 },
                 "updatedTechDifficulty": "Low",
                 "updatedLogisticsDifficulty": "Low"
@@ -187,7 +189,8 @@
                   "source": "MobileApp",
                   "destination": "Server",
                   "effort": "VeryLow",
-                  "status": "Planned"
+                  "status": "Planned",
+                  "active": false
                 },
                 "updatedTechDifficulty": "Medium-High",
                 "updatedLogisticsDifficulty": "Low-Medium"
@@ -199,7 +202,8 @@
                   "source": "MobileApp",
                   "destination": "Server",
                   "effort": "Low",
-                  "status": "Planned"
+                  "status": "Planned",
+                  "active": true
                 },
                 "updatedTechDifficulty": "Low",
                 "updatedLogisticsDifficulty": "Low"
@@ -223,7 +227,8 @@
                   "source": "MobileApp",
                   "destination": "Server",
                   "effort": "Low",
-                  "status": "Planned"
+                  "status": "Planned",
+                  "active": true
                 },
                 "updatedTechDifficulty": "Low",
                 "updatedLogisticsDifficulty": "Low"
@@ -235,7 +240,8 @@
                   "source": "MobileApp",
                   "destination": "Server",
                   "effort": "VeryLow",
-                  "status": "Planned"
+                  "status": "Planned",
+                  "active": false
                 },
                 "updatedTechDifficulty": "Low",
                 "updatedLogisticsDifficulty": "Low"
@@ -247,7 +253,7 @@
       },
       "risks": {
         "s": "Medium",
-        "t": "Medium",
+        "t": "Critical",
         "r": "None",
         "i": "Low",
         "d": "Medium",
@@ -317,7 +323,8 @@
                   "source": "Server",
                   "destination": "DB",
                   "effort": "Low",
-                  "status": "Backlog"
+                  "status": "Backlog",
+                  "active": false
                 },
                 "updatedTechDifficulty": "Low",
                 "updatedLogisticsDifficulty": "Low"
@@ -339,7 +346,8 @@
                   "source": "Server",
                   "destination": "DB",
                   "effort": "Low",
-                  "status": "Backlog"
+                  "status": "Backlog",
+                  "active": false
                 },
                 "updatedTechDifficulty": "Medium",
                 "updatedLogisticsDifficulty": "Low"
@@ -362,7 +370,8 @@
                   "source": "Server",
                   "destination": "DB",
                   "effort": "Low",
-                  "status": "Backlog"
+                  "status": "Backlog",
+                  "active": false
                 },
                 "updatedTechDifficulty": "High",
                 "updatedLogisticsDifficulty": "Low"
@@ -384,7 +393,8 @@
                   "source": "Server",
                   "destination": "DB",
                   "effort": "Low",
-                  "status": "Backlog"
+                  "status": "Backlog",
+                  "active": false
                 },
                 "updatedTechDifficulty": "Low",
                 "updatedLogisticsDifficulty": "Low"
@@ -406,7 +416,8 @@
                   "source": "Server",
                   "destination": "DB",
                   "effort": "Low",
-                  "status": "Backlog"
+                  "status": "Backlog",
+                  "active": false
                 },
                 "updatedTechDifficulty": "Medium",
                 "updatedLogisticsDifficulty": "Low"
@@ -419,7 +430,7 @@
         "s": "Medium",
         "t": "Medium",
         "r": "None",
-        "i": "Medium",
+        "i": "High",
         "d": "Medium",
         "e": "Medium"
       }
