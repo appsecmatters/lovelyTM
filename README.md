@@ -1,7 +1,7 @@
 # lovelyTM
 
 A lovely and lightweight threat modeling tool.
-[Screenshot](resources/screenshot.png)
+![Screenshot](./resources/screenshot.png)
 
 ## CONCEPT
 
