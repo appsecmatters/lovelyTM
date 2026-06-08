@@ -17,14 +17,14 @@ const STRIDE_NAMES = {
   e: 'Elevation of Privilege',
 };
 
-/** STRIDE letter → definition from STRIDE_definitions.md (Microsoft) */
+/** STRIDE letter → definition (source: resources/STRIDE_definitions.md) */
 const STRIDE_DEFINITIONS = {
-  s: 'Involves illegally accessing and then using another user\'s authentication information, such as username and password',
-  t: 'Involves the malicious modification of data. Examples include unauthorized changes made to persistent data, such as that held in a database, and the alteration of data as it flows between two computers over an open network, such as the Internet',
-  r: 'Associated with users who deny performing an action without other parties having any way to prove otherwise—for example, a user performs an illegal operation in a system that lacks the ability to trace the prohibited operations. Non-Repudiation refers to the ability of a system to counter repudiation threats.',
-  i: 'Involves the exposure of information to individuals who are not supposed to have access to it—for example, the ability of users to read a file that they were not granted access to, or the ability of an intruder to read data in transit between two computers',
-  d: 'Denial of service (DoS) attacks deny service to valid users—for example, by making a Web server temporarily unavailable or unusable. You must protect against certain types of DoS threats simply to improve system availability and reliability',
-  e: 'An unprivileged user gains privileged access and thereby has sufficient access to compromise or destroy the entire system. Elevation of privilege threats include those situations in which an attacker has effectively penetrated all system defenses and become part of the trusted system itself, a dangerous situation indeed',
+  s: "Involves illegally accessing and then using another user's authentication information, such as username and password",
+  t: "Involves the malicious modification of data. Examples include unauthorized changes made to persistent data, such as that held in a database, and the alteration of data as it flows between two computers over an open network, such as the Internet",
+  r: "Associated with users who deny performing an action without other parties having any way to prove otherwise—for example, a user performs an illegal operation in a system that lacks the ability to trace the prohibited operations. Non-Repudiation refers to the ability of a system to counter repudiation threats. For example, a user who purchases an item might have to sign for the item upon receipt. The vendor can then use the signed receipt as evidence that the user did receive the package",
+  i: "Involves the exposure of information to individuals who are not supposed to have access to it—for example, the ability of users to read a file that they were not granted access to, or the ability of an intruder to read data in transit between two computers",
+  d: "Denial of service (DoS) attacks deny service to valid users—for example, by making a Web server temporarily unavailable or unusable. You must protect against certain types of DoS threats simply to improve system availability and reliability",
+  e: "An unprivileged user gains privileged access and thereby has sufficient access to compromise or destroy the entire system. Elevation of privilege threats include those situations in which an attacker has effectively penetrated all system defenses and become part of the trusted system itself, a dangerous situation indeed",
 };
 
 /** Returns a generic ⓘ icon with a Bootstrap tooltip showing any message. */
@@ -1153,16 +1153,16 @@ function buildRiskScoringHtml() {
   ).join('');
 
   return `
-    <h6 class="fw-semibold mb-2">Business Risk Matrix</h6>
-    <p class="text-muted small mb-1">Rows: business impact of the threat. Columns: combined attack difficulty.</p>
+    <h6 class="fw-semibold mb-2">Business Risk table</h6>
+    <p class="text-muted small mb-1">Rows: business impact. Columns: combined attack difficulty.</p>
     <div class="table-responsive mb-4">
       <table class="table table-sm table-bordered mb-0">
         <thead class="table-light"><tr>${bizHeaderCells}</tr></thead>
         <tbody>${bizBodyRows}</tbody>
       </table>
     </div>
-    <h6 class="fw-semibold mb-2">Difficulty Matrix</h6>
-    <p class="text-muted small mb-1">Combines technical and logistics difficulty into a single attack difficulty.</p>
+    <h6 class="fw-semibold mb-2">Attack Difficulty table</h6>
+    <p class="text-muted small mb-1">Combines technical and logistics difficulty into an overall attack difficulty.</p>
     <div class="table-responsive">
       <table class="table table-sm table-bordered mb-0">
         <thead class="table-light"><tr>${diffHeaderCells}</tr></thead>
@@ -1172,8 +1172,9 @@ function buildRiskScoringHtml() {
   `;
 }
 
+
 // ============================================================
-// Crash Course Content  (source: crash_course.md)
+// Crash Course Content  (source: resources/crash_course.md)
 // ============================================================
 
 const CRASH_COURSE_MD = `### Goal: Identify security risks in the interactions between the components and prioritize what requires fixing

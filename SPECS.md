@@ -1,4 +1,4 @@
-Version 0.80
+Version 0.81
 
 # High level description
 
@@ -207,7 +207,7 @@ Something simple like the bootstrap CSS.
 ## Online help
 
 Next to the word Spoofing, Tampering, Repudation, Information Disclosure, Denial of Serivce, Elevation of Privilege:
-display a small help icon and when mouse is over it, show the corresponding definition loaded from `STRIDE_definitions.md`
+display a small help icon and when mouse is over it, show the corresponding definition loaded from `resources/STRIDE_definitions.md`
 
 # Persistence
 
@@ -218,7 +218,8 @@ Build a JSON with:
 Generate from this JSON a file called {filename}.json and have the browser download it.
 
 # i18n
-Define all the form messages/button names in a file called `messages.txt` that can be used to translate to another language.
+
+Define all the form messages/button names in a file called `resources/messages.txt` that can be used to translate to another language.
 
 # Testing
 

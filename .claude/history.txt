@@ -31,3 +31,4 @@ Build history (for personal stats)
 * Version 0.68: it took 2 minutes. Security requirements should never lower attack difficulty.
 * Version 0.70: it took 3 minutes. Simulate requirements on and off
 * Version 0.80: it took 3 minutes. Renamed to lovelytm , messages.txt file, no filtering out of Implemented
+* Version 0.81: it took 3 minutes. Moved resources to dedicated subfolders

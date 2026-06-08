@@ -33,6 +33,12 @@ modal.export.confirm = Download JSON file
 # ── Risk Scoring modal ────────────────────────────────────────────────────────
 modal.risk_scoring.title = Risk Scoring
 modal.risk_scoring.close = Close
+modal.risk_scoring.biz_matrix.title = Business Risk table
+modal.risk_scoring.biz_matrix.subtitle = Rows: business impact. Columns: combined attack difficulty.
+modal.risk_scoring.diff_matrix.title = Attack Difficulty table
+modal.risk_scoring.diff_matrix.subtitle = Combines technical and logistics difficulty into an overall attack difficulty.
+modal.risk_scoring.biz_matrix.col_header = Business Impact / Attack Difficulty
+modal.risk_scoring.diff_matrix.col_header = Technical / Logistics
 
 # ── Crash Course modal ────────────────────────────────────────────────────────
 modal.crash_course.title = STRIDE Threat Modeling
