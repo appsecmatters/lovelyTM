@@ -1,4 +1,4 @@
-Version 0.70
+Version 0.80
 
 # High level description
 
@@ -157,9 +157,6 @@ A table of the SecurityRequirements with the title "Security Requirements Summar
 * Efficiency score: efficiency computed with algo below
 
 It is possible to sort by any Column, except for Description.
-Sorting by Risk Reduction or Effiency Score is the concatenation of 2 sublists: first the sorted sublist without the items of status Implemented, and then the sorted sublist containing only the status Implemented items.
-
-Lines with status Implemented are coloured in dark grey
 
 algo: to be implemented in `risk_scoring.js`, using secRequirement as parameter
 Include tests in `test_all_risk_scores.js` to make sure differenty SecurityRequirements do not always return the same score.
@@ -219,6 +216,9 @@ Build a JSON with:
 * the list of Interaction objects and a full copy of their members as described in the Data model section. Do not include `secRequirement` if either updatedTechDifficulty or updatedLogisticsDifficulty is NA
 
 Generate from this JSON a file called {filename}.json and have the browser download it.
+
+# i18n
+Define all the form messages/button names in a file called `messages.txt` that can be used to translate to another language.
 
 # Testing
 

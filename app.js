@@ -1,5 +1,5 @@
 // ============================================================
-// LiteTM — Lightweight Threat Modeling Tool  (v0.63)
+// lovelyTM — Lovely Threat Modeling Tool
 // Scoring logic lives in risk_scoring.js (SEVERITY, DIFFICULTY,
 // matrices, combineDifficulty, computeRiskForLetter, computeAllRisks,
 // RISK_ORDER) — all available as globals when loaded before this file.
@@ -41,6 +41,7 @@ const HELP_BUSINESS_IMPACT   = 'Supposing such attack is possible, what would be
 const HELP_ATTACK_DIFFICULTY = 'Estimate the complexity to execute such attack';
 
 const IMPLEMENTATION_EFFORT = ['VeryLow', 'Low', 'Medium', 'High', 'VeryHigh'];
+const EFFORT_LABELS = { VeryLow: 'Very Low', Low: 'Low', Medium: 'Medium', High: 'High', VeryHigh: 'Very High' };
 
 const REQUIREMENT_STATUS = ['NA', 'Backlog', 'Planned', 'Implemented'];
 
@@ -399,7 +400,6 @@ function collectAllSecRequirements() {
 
 /**
  * Apply current tableSort to an array of row objects { req, score, efficiency }.
- * Risk/Efficiency cols use a split sort: non-Implemented rows first, Implemented last.
  */
 function sortSecReqRows(rows) {
   const { col, asc } = tableSort;
@@ -424,11 +424,6 @@ function sortSecReqRows(rows) {
     }
   };
 
-  if (col === 'risk' || col === 'efficiency') {
-    const notImpl = rows.filter(r => (r.req.status || 'NA') !== 'Implemented');
-    const impl    = rows.filter(r => (r.req.status || 'NA') === 'Implemented');
-    return [...notImpl.sort(cmp), ...impl.sort(cmp)];
-  }
   return [...rows].sort(cmp);
 }
 
@@ -461,9 +456,8 @@ function buildSecReqTableHtml() {
   }).join('');
 
   const bodyRows = sorted.map(({ req, idx, score, efficiency }) => {
-    const implemented = (req.status || 'NA') === 'Implemented';
     return `
-    <tr${implemented ? ' class="table-secondary"' : ''}>
+    <tr>
       <td>
         <div>${escapeHtml(req.title)}</div>
         <div class="d-flex gap-1 mt-1">
@@ -478,7 +472,7 @@ function buildSecReqTableHtml() {
         </div>
       </td>
       <td>${escapeHtml(req.description || '')}</td>
-      <td>${escapeHtml(req.effort)}</td>
+      <td>${escapeHtml(EFFORT_LABELS[req.effort] || req.effort)}</td>
       <td>${escapeHtml(req.status || 'NA')}</td>
       <td>${score}</td>
       <td>${efficiency.toFixed(2)}</td>
@@ -541,7 +535,7 @@ function renderStrideModalContent() {
       <h6 class="fw-semibold text-primary">Business Impact Scenarios</h6>
       <div id="bizList">
         ${biz.length === 0
-          ? '<p class="text-muted small fst-italic mb-1">No scenarios added yet.</p>'
+          ? '<p class="text-muted small fst-italic mb-1">No scenarios added yet</p>'
           : biz.map((s, i) => `
             <div class="scenario-row">
               <div class="flex-grow-1">
@@ -569,7 +563,7 @@ function renderStrideModalContent() {
       <h6 class="fw-semibold text-primary mt-3">Attack Scenarios</h6>
       <div id="techList">
         ${tech.length === 0
-          ? '<p class="text-muted small fst-italic mb-1">No scenarios added yet.</p>'
+          ? '<p class="text-muted small fst-italic mb-1">No scenarios added yet</p>'
           : tech.map((t, i) => `
             <div class="scenario-row">
               <div class="flex-grow-1">
@@ -622,12 +616,12 @@ function renderStrideModalContent() {
         <label class="form-label fw-medium">Title <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="bizTitle"
                value="${existing ? escapeHtml(existing.title) : ''}"
-               placeholder="e.g. Attacker impersonates a legitimate user">
+               >
       </div>
       <div class="mb-3">
         <label class="form-label fw-medium">Description</label>
         <textarea class="form-control" id="bizDescription" rows="3"
-                  placeholder="Describe what the attacker could achieve…">${existing ? escapeHtml(existing.description) : ''}</textarea>
+                  >${existing ? escapeHtml(existing.description) : ''}</textarea>
       </div>
       <div class="mb-3">
         <label class="form-label fw-medium">Business Impact</label>
@@ -693,12 +687,12 @@ function renderStrideModalContent() {
         <label class="form-label fw-medium">Title <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="techTitle"
                value="${existing ? escapeHtml(existing.title) : ''}"
-               placeholder="e.g. Replay a captured authentication token">
+               >
       </div>
       <div class="mb-3">
         <label class="form-label fw-medium">Description</label>
         <textarea class="form-control" id="techDescription" rows="3"
-                  placeholder="Describe the attack technique…">${existing ? escapeHtml(existing.description) : ''}</textarea>
+                  >${existing ? escapeHtml(existing.description) : ''}</textarea>
       </div>
       <div class="mb-3">
         <label class="form-label fw-medium">Technical Difficulty</label>
@@ -744,18 +738,18 @@ function renderStrideModalContent() {
         <label class="form-label fw-medium">Title <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="reqTitle"
                value="${existingReq ? escapeHtml(existingReq.secRequirement.title) : ''}"
-               placeholder="e.g. Implement token expiry">
+               >
       </div>
       <div class="mb-3">
         <label class="form-label fw-medium">Description</label>
         <textarea class="form-control" id="reqDescription" rows="3"
-                  placeholder="Describe the security control…">${existingReq ? escapeHtml(existingReq.secRequirement.description) : ''}</textarea>
+                  >${existingReq ? escapeHtml(existingReq.secRequirement.description) : ''}</textarea>
       </div>
       <div class="mb-3">
         <label class="form-label fw-medium">Implementation Effort</label>
         <select class="form-select" id="reqEffort">
           ${IMPLEMENTATION_EFFORT.map(ef =>
-            `<option value="${ef}"${existingReq && existingReq.secRequirement.effort === ef ? ' selected' : ''}>${ef}</option>`
+            `<option value="${ef}"${existingReq && existingReq.secRequirement.effort === ef ? ' selected' : ''}>${EFFORT_LABELS[ef]}</option>`
           ).join('')}
         </select>
       </div>
@@ -994,7 +988,7 @@ const app = {
     // Set effort dropdown
     const effortSel = document.getElementById('editSecReqEffort');
     effortSel.innerHTML = IMPLEMENTATION_EFFORT.map(e =>
-      `<option value="${e}"${editSecReqTarget.effort === e ? ' selected' : ''}>${e}</option>`
+      `<option value="${e}"${editSecReqTarget.effort === e ? ' selected' : ''}>${EFFORT_LABELS[e]}</option>`
     ).join('');
     // Set status dropdown
     const statusSel = document.getElementById('editSecReqStatus');

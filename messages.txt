@@ -1,0 +1,148 @@
+# lovelyTM — i18n messages
+# Format: key = value
+# Keys with {placeholder} contain dynamic content substituted at runtime.
+
+# ── App branding ──────────────────────────────────────────────────────────────
+app.brand = lovelyTM
+page.title = lovelyTM — Lovely Threat Modeling
+
+# ── Navbar buttons ────────────────────────────────────────────────────────────
+btn.import_diagram = Import Sequence Diagram
+btn.import_json = Import existing JSON
+btn.export = Export to Json
+btn.crash_course = Crash Course
+btn.risk_scoring = Risk Scoring
+
+# ── Main panel ────────────────────────────────────────────────────────────────
+empty_state.message = Click Import Sequence Diagram or Import existing JSON to get started.
+label.coverage_score = Coverage score:
+
+# ── Import sequence diagram modal ─────────────────────────────────────────────
+modal.import.title = Import Sequence Diagram
+modal.import.description = Paste a Mermaid sequence diagram:
+modal.import.placeholder = sequenceDiagram\n    participant Client\n    participant Server\n    Client->>Server: Login request\n    Server-->>Client: Auth token
+modal.import.cancel = Cancel
+modal.import.confirm = Render Diagram
+
+# ── Export modal ──────────────────────────────────────────────────────────────
+modal.export.title = Export Threat Model
+modal.export.filename_label = Filename:
+modal.export.cancel = Cancel
+modal.export.confirm = Download JSON file
+
+# ── Risk Scoring modal ────────────────────────────────────────────────────────
+modal.risk_scoring.title = Risk Scoring
+modal.risk_scoring.close = Close
+
+# ── Crash Course modal ────────────────────────────────────────────────────────
+modal.crash_course.title = STRIDE Threat Modeling
+modal.crash_course.close = Close
+
+# ── Edit Security Requirement modal (from summary table) ──────────────────────
+modal.edit_sec_req.title = Edit Security Requirement
+modal.edit_sec_req.title_label = Title
+modal.edit_sec_req.description_label = Description
+modal.edit_sec_req.effort_label = Implementation Effort
+modal.edit_sec_req.status_label = Status
+modal.edit_sec_req.cancel = Cancel
+modal.edit_sec_req.save = Save
+
+# ── STRIDE modal — main page ──────────────────────────────────────────────────
+stride.modal.section.business_impact = Business Impact Scenarios
+stride.modal.section.attack_scenarios = Attack Scenarios
+stride.modal.section.resulting_risk = Resulting Risk
+stride.modal.no_scenarios = No scenarios added yet
+stride.modal.business.add_btn = + Add Business Impact Scenario
+stride.modal.business.help_tooltip = Supposing such attack is possible, what would be the business impact?
+stride.modal.attack.add_btn = + Add Attack Scenario
+stride.modal.attack.help_tooltip = Estimate the complexity to execute such attack
+stride.modal.btn.edit.title = Edit
+stride.modal.btn.delete.title = Delete
+stride.modal.close = Close
+
+# ── STRIDE modal — Business Impact scenario submodal ──────────────────────────
+stride.modal.biz_submodal.title = Business Impact scenario for {stride_mapping}
+stride.modal.biz_form.title_label = Title
+stride.modal.biz_form.description_label = Description
+stride.modal.biz_form.impact_label = Business Impact
+stride.modal.biz_form.back = ← Back
+stride.modal.biz_form.save = Save Scenario
+stride.modal.biz_form.update = Update Scenario
+
+# ── STRIDE modal — Attack scenario submodal ───────────────────────────────────
+stride.modal.attack_submodal.title = Attack scenario for {stride_mapping}
+stride.modal.tech_form.title_label = Title
+stride.modal.tech_form.description_label = Description
+stride.modal.tech_form.tech_difficulty_label = Technical Difficulty
+stride.modal.tech_form.logs_difficulty_label = Logistics Difficulty
+stride.modal.tech_form.requirements_section = Security Requirements
+stride.modal.tech_form.no_requirements = No security requirements added yet.
+stride.modal.tech_form.create_req_btn = + Create Security Requirement
+stride.modal.tech_form.resulting_difficulty = Resulting attack difficulty:
+stride.modal.tech_form.back = ← Back
+stride.modal.tech_form.save = Save Scenario
+stride.modal.tech_form.update = Update Scenario
+
+# ── STRIDE modal — Security Requirement sub-submodal ─────────────────────────
+stride.modal.req_submodal.title = Security Requirement for {stride_mapping}
+stride.modal.req_form.section_a = Security Requirement
+stride.modal.req_form.title_label = Title
+stride.modal.req_form.description_label = Description
+stride.modal.req_form.effort_label = Implementation Effort
+stride.modal.req_form.status_label = Status
+stride.modal.req_form.section_b = For this attack scenario
+stride.modal.req_form.tech_diff_label = Updated Technical Difficulty
+stride.modal.req_form.logs_diff_label = Updated Logistics Difficulty
+stride.modal.req_form.back = ← Back
+stride.modal.req_form.save = Save Requirement
+stride.modal.req_form.update = Update Requirement
+
+# ── Security Requirements Summary table ───────────────────────────────────────
+table.sec_req.title = Security Requirements Summary
+table.sec_req.col.title = Title
+table.sec_req.col.description = Description
+table.sec_req.col.effort = Implementation Effort
+table.sec_req.col.status = Status
+table.sec_req.col.risk = Risk Reduction
+table.sec_req.col.efficiency = Efficiency Score
+table.sec_req.btn.edit.title = Edit
+table.sec_req.btn.delete.title = Delete
+table.sec_req.btn.active.title = Active — click to deactivate
+table.sec_req.btn.inactive.title = Inactive — click to activate
+table.sec_req.toggle.on = ON
+table.sec_req.toggle.off = OFF
+
+# ── STRIDE letter names ───────────────────────────────────────────────────────
+stride.s = Spoofing
+stride.t = Tampering
+stride.r = Repudiation
+stride.i = Information Disclosure
+stride.d = Denial of Service
+stride.e = Elevation of Privilege
+
+# ── Business Impact severity values ──────────────────────────────────────────
+severity.None = None
+severity.Low = Low
+severity.Medium = Medium
+severity.High = High
+
+# ── Attack difficulty values ─────────────────────────────────────────────────
+difficulty.NA = NA
+difficulty.Low = Low
+difficulty.Low-Medium = Low-Medium
+difficulty.Medium = Medium
+difficulty.Medium-High = Medium-High
+difficulty.High = High
+
+# ── Implementation effort values ──────────────────────────────────────────────
+effort.VeryLow = Very Low
+effort.Low = Low
+effort.Medium = Medium
+effort.High = High
+effort.VeryHigh = Very High
+
+# ── Requirement status values ─────────────────────────────────────────────────
+status.NA = NA
+status.Backlog = Backlog
+status.Planned = Planned
+status.Implemented = Implemented

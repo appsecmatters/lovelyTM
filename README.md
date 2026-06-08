@@ -1,5 +1,5 @@
-# litetm
-Lightweight threat modeling tool
+# lovelyTM
+A lovely and lightweight threat modeling tool
 
 TODO explain STRIDE business first + opinionated
 
@@ -9,44 +9,8 @@ TODO explain how to play with security requirements priorities
 
 TODO provide a really nice example (loyalty card give points)
 
-## Not implemented yet
+## Roadmap
 
-* Show Security Requirement impact by displaying a circle of the defaultBusinessRisk color below the STRIDE letters
- (and remove filtering out Implemented + move edit/delete icons to a specific column, description needed?)
+* Diff feature between an exported JSON file and a new sequence diagram: ask to update only the modified Interactions
 
-* Reusing scenarios for different interactions/stride letters (to be detailed for same source/destination)
-
-* Diff between an exported JSON file and a new sequence diagram: ask to update only the modified Interactions
-
-## Build history
-
-* Initial Claude build with version 0.11 of specs: it took 15 minutes. UI description was missing section 2 Attack Scenarios
-* Version 0.12: it took 4 minutes. UI description now contains section 2 Attack Scenarios, validate markdown before closing import modal
-* Version 0.13: it took 4.5 minutes. Color arrows + export sequence digram in JSON.
-   Also 7 minutes because arrows were not arrows anymore after being coloured: still failed
-* Version 0.14: it took 3 minutes. Color text above rather than arrow + Import from already exported JSON
-* Version 0.20: it took 4 minutes. None business impact, refactoring risk scoring logic/testing 
-* Version 0.21 : it took 1 minute. Display risk score live
-* Version 0.22 : it took 5 minutes. Risk computation even if no TechnicalScenario via NA value, question mark displayed when more info needed
-* Version 0.23: it took 3 minutes. Include crash course
-* Version 0.24: it took 6 minutes. Cleaner crash course and online help.
-* Version 0.25: it took 3 minutes. Online help for business impact and attack scenarios + risk scoring tables
-* Version 0.26: it took 1 minute. More acurate submodal titles
-* Version 0.27: it took 2 minutes. Completion score
-* Version 0.50: it took 6 minutes. Security requirements 1st draft
-* Version 0.51: it took 3 minutes. Attack difficulty algorithm with security requirements
-* Version 0.52: it took 6 minutes (server error 1st time after 3.5 minutes). Improve display of security requirements, auto create RequirementInstances for similar interactions
-* Version 0.53: it took 2 minutes. Auto create requirement instances better syncing
-* Version 0.54: it took 3 minutes (server error 3 times after 3.5 minutes). Display exclamation mark for RequirementInstances to be completed (NA values)
-* Version 0.55: it took 2 minutes. Simpler handling of display actions (only when closing main modal). But it took 2 minutes to fix the update exising security requirement bug. And 7 minutes to fix the Delete bug.
-* Version 0.56: it took 1 minute. Redesign Security requirement sub-submodal.
-* Version 0.60: it took 3 minutes. Security requirements summary table. Naive scoring
-* Version 0.61: it took 3 minutes. Risk reduction and efficency scoring
-* Version 0.62: it took 6 minues. Fix risk reduction scoring
-* Version 0.63: it took 3 minutes. Fix bugs scoring + screen refresh when deleting security requirements
-* Version 0.64: it took 4 minutes. Clarify risk reduction scoring should yield different results + tests
-* Version 0.65: it took 1 minute. Do not colour text when there are question marks.
-* Version 0.66: it took 2 minutes. Build unique security requirements when importing from JSON. Do not export in JSON security requirements with NA value
-* Version 0.67: it took 2 minutes. After importing from JSON, deleting security requirement from the attack scenario does not work.
-* Version 0.68: it took 2 minutes. Security requirements should never lower attack difficulty.
-* Version 0.70: it took 3 minutes. Simulate requirements on and off
+* Reusing scenarios between different Interactions or STRIDE letters
