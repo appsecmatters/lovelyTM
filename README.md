@@ -5,7 +5,7 @@ A lovely and lightweight threat modeling tool.
 
 ## CONCEPT
 
-Hopefully this is not yet another threat modeling tool as the concept is based on **strong differentiators**:
+Hopefully this is not yet another threat modeling tool as the concept is built on **strong differentiators**:
 * based on [Microsoft STRIDE](https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats#stride-model), but **focusing first on business risks** to make it less verbose
 * **visual heatmap** of the most sensitive areas
 * help **produce a prioritized short-list of most important security requirements**, rather than a long inventory of threats 
