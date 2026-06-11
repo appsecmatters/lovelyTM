@@ -37,7 +37,7 @@ You just want to play with the tool? Import the existing JSON file `examples/use
 
 ## DEPLOYMENT
 
-You can use direclty the [hosted version](https://lovelytm.appsecmatters.com): no need to worry about sensitive information, all the processing is handled direclty by the browser (no backend or database).
+You can use directly the [hosted version](https://lovelytm.appsecmatters.com): no need to worry about sensitive information, all the processing is handled by the browser (no backend or database).
 
 Or you can self-host this folder with the static web server of your choice.
 
