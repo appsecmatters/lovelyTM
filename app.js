@@ -1212,7 +1212,11 @@ const CRASH_COURSE_MD = `### Goal: Identify security risks in the interactions b
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+  // securityLevel 'strict' (SPECS.md, Security): mermaid runs its DOMPurify pass
+  // over the generated SVG and disables the click/link interaction directives.
+  // displaySvg() injects that SVG with innerHTML, so 'loose' would allow an
+  // imported diagram or JSON file to execute script in the page origin.
+  mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'strict' });
 
   bsStrideModal = new bootstrap.Modal(document.getElementById('strideModal'), {
     backdrop: 'static',

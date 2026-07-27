@@ -1,4 +1,4 @@
-Version 0.81
+Version 0.82
 
 # High level description
 
@@ -229,3 +229,7 @@ Make sure:
 * Low business impact always returns Low
 * Medium business impact always return Low, Medium or NA
 * High business impact returns at least Medium or NA
+
+# Security
+
+Use Mermaid with `securityLevel` set to `strict`
