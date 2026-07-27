@@ -1,0 +1,57 @@
+# Security response headers for the Cloudflare Workers static-assets deployment.
+# Cloudflare reads this file as configuration and does not serve it publicly.
+#
+# The img-src directive is load-bearing, not boilerplate: Mermaid's
+# %%{init: {"themeCSS": ...}}%%  directive is not covered by securityLevel:'strict'
+# and lets an imported diagram or JSON file inject CSS that reaches the network via
+# url(). Verified: without this policy an untrusted threat model silently fetches an
+# attacker-controlled URL on open; with it the request is blocked as an img-src
+# violation. Full app functionality was regression-tested under this exact policy.
+
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+  X-Frame-Options: DENY
+
+# ---------------------------------------------------------------------------
+# Directive notes
+#
+# img-src 'self' data:
+#     The important one. Blocks the confirmed M1 exploit: CSS injected through a
+#     Mermaid %%{init: {"themeCSS": ...}}%% directive cannot fetch
+#     url(https://attacker/...). CSS background-image fetches are governed by
+#     img-src, NOT style-src, so 'unsafe-inline' in style-src does not reopen it.
+#     data: is required for Mermaid's inline marker/icon assets.
+#
+# style-src ... 'unsafe-inline'
+#     Unavoidable today: Mermaid injects a <style> block into the rendered SVG,
+#     and the app uses style="..." attributes throughout.
+#
+# script-src ... 'unsafe-inline'
+#     Required only because app.js emits inline onclick= handlers (finding L5).
+#     Once those are replaced with event delegation, DELETE 'unsafe-inline'
+#     from script-src — that is the single biggest strengthening available here.
+#
+# connect-src 'none'
+#     The app makes no fetch/XHR/WebSocket calls at all. Pinning this to 'none'
+#     means any future exfiltration attempt over those channels fails closed.
+#
+# script-src / style-src https://cdn.jsdelivr.net
+#     Needed for bootstrap, mermaid and marked. If you vendor those four files
+#     locally (recommended in M3), replace the whole policy with:
+#         default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline';
+#         img-src 'self' data:; font-src 'self' data:; connect-src 'none';
+#         base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
+#
+# frame-ancestors 'none' + X-Frame-Options: DENY
+#     Prevents framing the tool for clickjacking against the requirement
+#     toggle/delete controls. X-Frame-Options is the legacy fallback.
+#
+# Strict-Transport-Security
+#     Only safe because the site is HTTPS-only. Confirm before deploying that no
+#     subdomain of the apex needs plain HTTP, since includeSubDomains is set.
+# ---------------------------------------------------------------------------
